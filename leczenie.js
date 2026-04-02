@@ -21,7 +21,7 @@
             e.preventDefault(); 
             doHeal(); 
         }
-        if (e.code === 'KeyT') { 
+        if (e.code === 'KeyR') { 
             e.preventDefault(); 
             location.reload(); 
         }
