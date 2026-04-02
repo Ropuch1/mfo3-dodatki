@@ -1,16 +1,16 @@
 (function() {
     'use strict';
 
-    GM_addStyle(`
+    // Zamiennik GM_addStyle
+    const style = document.createElement('style');
+    style.textContent = `
         /* Tło dla wybranych Bossów */
-        .WUI_Table.data-table tr {
+        .WUI_Table.data-table tr.boss-row {
             background-color: #f8e3b6 !important;
         }
 
         /* Tło dla pozostałych wierszy ROOT (miasta) */
-        .WUI_Table.data-table tr.root.odd:not(.boss-row):not(#boss-root) {
-            background-color: #f6f0ce !important;
-        }
+        .WUI_Table.data-table tr.root.odd:not(.boss-row):not(#boss-root),
         .WUI_Table.data-table tr.root.even:not(.boss-row):not(#boss-root) {
             background-color: #f6f0ce !important;
         }
@@ -27,10 +27,9 @@
         .boss-edit-row button { cursor: pointer; padding: 4px 8px; }
         .boss-footer { margin-top: 15px; display: flex; gap: 10px; flex-wrap: wrap; }
         .btn-main { padding: 8px; flex: 1; cursor: pointer; font-weight: bold; }
-
-        /* Styl dla nowych przycisków */
         .btn-sub { padding: 4px; flex: 1; cursor: pointer; font-size: 11px; }
-    `);
+    `;
+    document.head.appendChild(style);
 
     const defaultData = [
         { map: "Błękitna Laguna", name: "Bogini" },
@@ -41,7 +40,14 @@
         { map: "Podmokła Grota: Poziom 2", name: "Garuda" }
     ];
 
-    function getBosses() { return GM_getValue("boss_config_v4", defaultData); }
+    // Zamiennik GM_getValue / GM_setValue
+    function getBosses() {
+        const saved = localStorage.getItem("boss_config_v4");
+        return saved ? JSON.parse(saved) : defaultData;
+    }
+    function setBosses(data) {
+        localStorage.setItem("boss_config_v4", JSON.stringify(data));
+    }
 
     function openEditor() {
         if (document.getElementById("boss-editor-window")) return;
@@ -70,13 +76,13 @@
                     <button class="b-down">↓</button>
                     <button class="b-del" style="color:red">X</button>
                 `;
-                row.querySelector(".b-up").onclick = () => { if(i>0) { [list[i], list[i-1]] = [list[i-1], list[i]]; save(list); } };
-                row.querySelector(".b-down").onclick = () => { if(i<list.length-1) { [list[i], list[i+1]] = [list[i+1], list[i]]; save(list); } };
-                row.querySelector(".b-del").onclick = () => { list.splice(i, 1); save(list); };
+                row.querySelector(".b-up").onclick = () => { if(i>0) { [list[i], list[i-1]] = [list[i-1], list[i]]; setBosses(list); render(); } };
+                row.querySelector(".b-down").onclick = () => { if(i<list.length-1) { [list[i], list[i+1]] = [list[i+1], list[i]]; setBosses(list); render(); } };
+                row.querySelector(".b-del").onclick = () => { list.splice(i, 1); setBosses(list); render(); };
                 row.querySelectorAll("input").forEach(inp => {
                     inp.onchange = () => {
                         list[i] = { map: row.querySelector(".m-in").value, name: row.querySelector(".n-in").value };
-                        GM_setValue("boss_config_v4", list);
+                        setBosses(list);
                     };
                 });
                 container.appendChild(row);
@@ -96,11 +102,10 @@
             `;
             win.appendChild(footer);
 
-            win.querySelector("#b-add").onclick = () => { list.push({map:"", name:""}); save(list); };
+            win.querySelector("#b-add").onclick = () => { list.push({map:"", name:""}); setBosses(list); render(); };
             win.querySelector("#b-save").onclick = () => location.reload();
             win.querySelector("#b-cancel").onclick = () => win.remove();
 
-            // Logika Eksportu
             win.querySelector("#b-export").onclick = () => {
                 const dataStr = JSON.stringify(getBosses(), null, 2);
                 const blob = new Blob([dataStr], {type: "application/json"});
@@ -111,7 +116,6 @@
                 link.click();
             };
 
-            // Logika Importu
             const fileInput = win.querySelector("#file-input");
             win.querySelector("#b-import").onclick = () => fileInput.click();
             fileInput.onchange = (e) => {
@@ -122,7 +126,7 @@
                     try {
                         const importedData = JSON.parse(event.target.result);
                         if (Array.isArray(importedData)) {
-                            GM_setValue("boss_config_v4", importedData);
+                            setBosses(importedData);
                             render();
                         } else { alert("Błędny format pliku!"); }
                     } catch (err) { alert("Błąd odczytu pliku!"); }
@@ -130,8 +134,6 @@
                 reader.readAsText(file);
             };
         };
-
-        const save = (newList) => { GM_setValue("boss_config_v4", newList); render(); };
         render();
     }
 
@@ -140,7 +142,6 @@
         const mapToName = {};
         bosses.forEach(b => { if(b.map) mapToName[b.map] = b.name; });
 
-        // 1. SKLONUJ nagłówek (header) na samą górę, jeśli go tam nie ma
         let existingHeader = table.querySelector("tr.header");
         let topHeader = table.querySelector("#top-header-clone");
 
@@ -150,7 +151,6 @@
             table.prepend(topHeader);
         }
 
-        // 2. Dodaj lub znajdź wiersz "Bossy" (zawsze pod sklonowanym headerem)
         let bossRoot = table.querySelector("#boss-root");
         if (!bossRoot) {
             bossRoot = document.createElement("tr");
@@ -164,7 +164,6 @@
             bossRoot.querySelector("#boss-cfg-btn").onclick = (e) => { e.stopPropagation(); openEditor(); };
         }
 
-        // 3. Rozpoznaj wiersze bossów
         const rows = {};
         table.querySelectorAll("tr").forEach(row => {
             if (row.id === "boss-root" || row.classList.contains("header") || row.id === "top-header-clone") return;
@@ -179,7 +178,6 @@
             }
         });
 
-        // 4. Ustaw bossów pod wierszem "Bossy"
         let last = bossRoot;
         bosses.forEach(b => {
             if (rows[b.name]) {
@@ -188,7 +186,6 @@
             }
         });
 
-        // 5. Upewnij się, że ORYGINALNY nagłówek jest zawsze pod ostatnim bossem
         if (existingHeader && existingHeader !== topHeader) {
             last.after(existingHeader);
         }
@@ -200,4 +197,5 @@
     });
     observer.observe(document.body, { childList: true, subtree: true });
 
+    console.log("%c[Portal] Skrypt załadowany poprawnie", "color: #f1c40f; font-weight: bold;");
 })();
