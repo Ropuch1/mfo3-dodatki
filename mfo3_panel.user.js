@@ -31,7 +31,7 @@
     function render(config) {
         const div = document.createElement('div');
         div.style.cssText = "position:fixed; top:60px; right:15px; z-index:10000; background:rgba(45,34,23,0.95); color:#e6d3a7; padding:12px; border:2px solid #7a5a3a; font-family:Verdana; font-size:11px; border-radius:8px; width:180px; box-shadow:0 0 15px black;";
-        div.innerHTML = `<b style="color:#f1c40f; display:block; text-align:center; margin-bottom:8px;">MENU ROPUCHA</b><div id="mfo-mods"></div>`;
+        div.innerHTML = `<b style="color:#f1c40f; display:block; text-align:center; margin-bottom:8px;">PANEL DODATKÓW RZAPSONS</b><div id="mfo-mods"></div>`;
         document.body.appendChild(div);
 
         config.modules.forEach(mod => {
