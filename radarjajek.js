@@ -12,18 +12,14 @@
     document.body.appendChild(display);
 
     function scan() {
-        // Szukamy wszystkiego co ma grafikę wielkanocną lub konkretne jajo z jedzenia
         const eggs = document.querySelectorAll('div[style*="Easter.png"], div[style*="Food.png?"][style*="-264px 0px"]');
         let found = [];
 
         eggs.forEach(el => {
             let parent = el.closest('.animator-clip') || el.closest('.overlay') || el;
-
             if (parent.style.left) {
                 let x = Math.floor(parseInt(parent.style.left) / 32);
                 let y = Math.floor(parseInt(parent.style.top) / 32);
-
-                // Unikamy pokazywania tego samego punktu dwa razy
                 if (!found.some(e => e.x === x && e.y === y)) {
                     found.push({x, y});
                 }
@@ -38,12 +34,12 @@
             });
             display.style.borderColor = "#2ecc71";
         } else {
+            // TUTAJ BYŁ BŁĄD - TERAZ JEST JAK W ORYGINALE
             html += '<div style="color:#95a5a6; margin-top:5px; font-style: italic;">Brak jajek na mapie</div>';
             display.style.borderColor = "#e74c3c";
         }
         display.innerHTML = html;
     }
 
-    // Odświeżanie co 500ms
     setInterval(scan, 500);
 })();
