@@ -1,7 +1,9 @@
 {
   "modules": [
     { "id": "wasd", "name": "Sterowanie WASD", "file": "wasd.js" },
-    { "id": "heal", "name": "Leczenie (T / M4)", "file": "leczenie.js" },
-    { "id": "liczniki", "name": "Radar jajek", "file": "radarjajek.js" }
+    { "id": "heal", "name": "Leczenie (T/R M1/M1 )", "file": "leczenie.js" },
+    { "id": "liczniki", "name": "Radar jajek", "file": "radarjajek.js" },
+    { "id": "potwory", "potwory switch (V)", "file": "potwory.js"}
+      
   ]
 }
