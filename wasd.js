@@ -1,12 +1,4 @@
-// ==UserScript==
-// @name         MFO3 - WASD (Moduł)
-// @version      7.0
-// @match        *://*.mfo3.pl/*
-// @grant        none
-// @updateURL    https://raw.githubusercontent.com/Ropuch1/mfo3-dodatki/main/wasd.js
-// @downloadURL  https://raw.githubusercontent.com/Ropuch1/mfo3-dodatki/main/wasd.js
-// ==/UserScript==
-
+// MODUŁ WASD 7.0 - Ładowany dynamicznie przez Panel Ropucha
 (function() {
     'use strict';
 
@@ -18,14 +10,12 @@
     };
 
     const handleKey = (e) => {
-        // SPRAWDZENIE PANELU: Jeśli w localStorage jest 'false', nic nie rób
-        if (localStorage.getItem('mfo3_wasd') === 'false') return;
-
         const char = e.key.toLowerCase();
         if (!keyMap[char]) return;
 
+        // Sprawdzanie czy użytkownik nie pisze na czacie/polach tekstowych
         const active = document.activeElement;
-        if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA')) return;
+        if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.isContentEditable)) return;
 
         const mapFrame = document.getElementById('map-frame') || document.querySelector('.MapEngine');
 
@@ -54,7 +44,9 @@
         }
     };
 
+    // Rejestracja zdarzeń
     window.addEventListener('keydown', handleKey, true);
     window.addEventListener('keyup', handleKey, true);
-    console.log("MFO3 WASD 7.0: Aktywny (zintegrowany z panelem)");
+
+    console.log("MFO3 WASD 7.0: Moduł wczytany pomyślnie!");
 })();
