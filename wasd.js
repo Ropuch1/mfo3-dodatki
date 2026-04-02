@@ -1,6 +1,6 @@
 (function() {
     'use strict';
-    console.log("%c[WASD] Silnik uruchomiony!", "color: #3498db; font-weight: bold;");
+    console.log("%c[WASD] Silnik aktywny - Szukam mapy...", "color: #3498db; font-weight: bold;");
 
     const keyMap = {
         'w': { key: 'ArrowUp', keyCode: 38 },
@@ -13,30 +13,40 @@
         const char = e.key.toLowerCase();
         if (!keyMap[char]) return;
         
-        // Nie blokuj, jeśli piszesz na czacie
+        // Blokada pisania na czacie
         if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') return;
 
         e.preventDefault();
-        e.stopPropagation();
+        e.stopImmediatePropagation();
 
-        // Wysyłamy zdarzenie do głównego okna gry
+        // Szukamy elementu mapy - sprawdzamy wszystkie możliwe miejsca
+        const target = document.querySelector('#map-canvas') || 
+                       document.querySelector('.MapEngine') || 
+                       document.querySelector('canvas') ||
+                       window;
+
         const eventData = {
             key: keyMap[char].key,
             code: keyMap[char].key,
             keyCode: keyMap[char].keyCode,
             which: keyMap[char].keyCode,
             bubbles: true,
-            cancelable: true
+            cancelable: true,
+            view: window,
+            isTrusted: true // Próbujemy zasugerować, że to prawdziwy klik
         };
 
         const newEv = new KeyboardEvent(e.type, eventData);
-        // Nadpisywanie keyCode dla starszych przeglądarek
-        Object.defineProperty(newEv, 'keyCode', { value: keyMap[char].keyCode });
         
-        window.dispatchEvent(newEv);
-        document.dispatchEvent(newEv);
+        // "Magiczne" nadpisanie parametrów, których gra wymaga do ruchu
+        Object.defineProperty(newEv, 'keyCode', { value: keyMap[char].keyCode });
+        Object.defineProperty(newEv, 'which', { value: keyMap[char].keyCode });
+
+        // Wysyłamy zdarzenie prosto do mapy
+        target.dispatchEvent(newEv);
     };
 
+    // Rejestrujemy zdarzenia na najwyższym poziomie
     window.addEventListener('keydown', handler, true);
     window.addEventListener('keyup', handler, true);
 })();
