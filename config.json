@@ -1,14 +1,7 @@
 {
   "modules": [
-    {
-      "id": "wasd",
-      "name": "Sterowanie WASD",
-      "file": "wasd.js"
-    },
-    {
-      "id": "heal",
-      "name": "Leczenie (T / M4)",
-      "file": "leczenie.js"
-    }
+    { "id": "wasd", "name": "Sterowanie WASD", "file": "wasd.js" },
+    { "id": "heal", "name": "Leczenie (T / M4)", "file": "leczenie.js" },
+    { "id": "liczniki", "name": "Licznik potworów", "file": "liczniki.js" }
   ]
 }
