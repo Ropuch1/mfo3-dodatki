@@ -21,7 +21,7 @@
             e.preventDefault(); 
             doHeal(); 
         }
-        if (e.code === 'KeyR') { 
+        if (e.code === 'KeyT') { 
             e.preventDefault(); 
             location.reload(); 
         }
@@ -29,7 +29,7 @@
 
     // Myszka (M4/M5)
     window.addEventListener('mousedown', (e) => {
-        if (e.button === 3) { doHeal(); }
-        if (e.button === 4) { location.reload(); }
+        if (e.button === 1) { doHeal(); }
+        if (e.button === 1) { location.reload(); }
     }, true);
 })();
