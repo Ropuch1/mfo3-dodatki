@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         MFO3 - Panel Ropucha
 // @namespace    http://tampermonkey.net/
-// @version      1.8
-// @description  Panel sterowania dodatkami (WASD + Leczenie)
+// @version      1.9
+// @description  Główny panel sterowania dodatkami
 // @author       Ropuch1
 // @match        *://*.mfo3.pl/*
 // @grant        none
@@ -10,7 +10,7 @@
 // @updateURL    https://raw.githubusercontent.com/Ropuch1/mfo3-dodatki/main/mfo3_panel.user.js
 // @downloadURL  https://raw.githubusercontent.com/Ropuch1/mfo3-dodatki/main/mfo3_panel.user.js
 //
-// --- POŁĄCZENIE Z MODUŁAMI ---
+// --- ŁADOWANIE MODUŁÓW PRZEZ REQUIRE ---
 // @require      https://raw.githubusercontent.com/Ropuch1/mfo3-dodatki/main/wasd.js
 // @require      https://raw.githubusercontent.com/Ropuch1/mfo3-dodatki/main/leczenie.js
 // ==/UserScript==
@@ -21,7 +21,7 @@
     const getSetting = (name) => localStorage.getItem('mfo3_' + name) === 'true';
     const setSetting = (name, value) => localStorage.setItem('mfo3_' + name, value);
 
-    // Domyślne wartości
+    // Inicjalizacja domyślnych wartości
     if (localStorage.getItem('mfo3_wasd') === null) setSetting('wasd', true);
     if (localStorage.getItem('mfo3_heal') === null) setSetting('heal', true);
 
@@ -38,7 +38,7 @@
                 <input type="checkbox" id="chk-heal" ${getSetting('heal') ? 'checked' : ''}> Leczenie (T/M4)
             </label>
             <div style="font-size:9px; margin-top:10px; color: #7a5a3a; text-align: center; border-top: 1px solid #444; padding-top: 5px;">
-                v1.8 | Zmień i odśwież (F5)
+                v1.9 | Zmień i kliknij F5
             </div>
         </div>
     `;
