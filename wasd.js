@@ -1,6 +1,6 @@
 (function() {
     'use strict';
-    // USUNĘLIŚMY STĄD IF (LOCALSTORAGE...) - to ważne!
+    console.log("%c[WASD] Silnik uruchomiony!", "color: #3498db; font-weight: bold;");
 
     const keyMap = {
         'w': { key: 'ArrowUp', keyCode: 38 },
@@ -9,26 +9,34 @@
         'd': { key: 'ArrowRight', keyCode: 39 }
     };
 
-    window.addEventListener('keydown', (e) => {
-        const char = e.key.toLowerCase();
-        if (!keyMap[char] || (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA')) return;
-        const mapFrame = document.getElementById('map-frame') || document.querySelector('.MapEngine');
-        if (mapFrame) {
-            e.preventDefault();
-            const downEv = new KeyboardEvent('keydown', { key: keyMap[char].key, keyCode: keyMap[char].keyCode, bubbles: true });
-            Object.defineProperty(downEv, 'keyCode', { value: keyMap[char].keyCode });
-            mapFrame.dispatchEvent(downEv);
-        }
-    }, true);
-
-    window.addEventListener('keyup', (e) => {
+    const handler = (e) => {
         const char = e.key.toLowerCase();
         if (!keyMap[char]) return;
-        const mapFrame = document.getElementById('map-frame') || document.querySelector('.MapEngine');
-        if (mapFrame) {
-            const upEv = new KeyboardEvent('keyup', { key: keyMap[char].key, keyCode: keyMap[char].keyCode, bubbles: true });
-            Object.defineProperty(upEv, 'keyCode', { value: keyMap[char].keyCode });
-            mapFrame.dispatchEvent(upEv);
-        }
-    }, true);
+        
+        // Nie blokuj, jeśli piszesz na czacie
+        if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') return;
+
+        e.preventDefault();
+        e.stopPropagation();
+
+        // Wysyłamy zdarzenie do głównego okna gry
+        const eventData = {
+            key: keyMap[char].key,
+            code: keyMap[char].key,
+            keyCode: keyMap[char].keyCode,
+            which: keyMap[char].keyCode,
+            bubbles: true,
+            cancelable: true
+        };
+
+        const newEv = new KeyboardEvent(e.type, eventData);
+        // Nadpisywanie keyCode dla starszych przeglądarek
+        Object.defineProperty(newEv, 'keyCode', { value: keyMap[char].keyCode });
+        
+        window.dispatchEvent(newEv);
+        document.dispatchEvent(newEv);
+    };
+
+    window.addEventListener('keydown', handler, true);
+    window.addEventListener('keyup', handler, true);
 })();
