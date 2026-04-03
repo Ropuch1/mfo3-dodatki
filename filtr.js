@@ -1,48 +1,25 @@
 (function() {
     'use strict';
 
-    let state = {
-        minLvl: 0,
-        maxLvl: 999
+    const getSaved = (key, def) => {
+        const val = localStorage.getItem(key);
+        return val !== null ? parseInt(val) : def;
     };
 
-    // Style CSS - dodane raz do nagłówka
+    let state = {
+        minLvl: getSaved('mfo3_filter_min', 0),
+        maxLvl: getSaved('mfo3_filter_max', 999)
+    };
+
     const style = document.createElement('style');
     style.innerHTML = `
-        .mfo3-clean-filter {
-            background: #efdfbb;
-            border-bottom: 2px solid #8c6d46;
-            padding: 8px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 10px;
-            font-family: Tahoma, sans-serif;
-            font-size: 11px;
-            font-weight: bold;
-            color: #3e2723;
-            width: 100%;
-            box-sizing: border-box;
-        }
-        .mfo3-clean-filter input {
-            width: 40px; 
-            border: 1px solid #8c6d46; 
-            background: #f3e5bc; 
-            text-align: center;
-        }
-        .mfo3-btn {
-            cursor: pointer;
-            border: 1px solid #3e2723;
-            font-weight: bold;
-            padding: 2px 8px;
-            color: #3e2723;
-        }
+        .mfo3-clean-filter { background: #efdfbb; border-bottom: 2px solid #8c6d46; padding: 8px; display: flex; justify-content: center; align-items: center; gap: 10px; font-family: Tahoma, sans-serif; font-size: 11px; font-weight: bold; color: #3e2723; width: 100%; box-sizing: border-box; }
+        .mfo3-clean-filter input { width: 45px; border: 1px solid #8c6d46; background: #f3e5bc; text-align: center; color: #000; font-weight: bold; }
+        .mfo3-btn { cursor: pointer; border: 1px solid #3e2723; font-weight: bold; padding: 2px 8px; color: #3e2723; text-transform: uppercase; }
     `;
     document.head.appendChild(style);
 
-    // Główna funkcja filtrująca
-    const updateVisibility = () => {
-        // 1. Ukrywanie/Pokazywanie przedmiotów
+    const applyFiltration = () => {
         document.querySelectorAll('.WUI_FancySelect_option').forEach(opt => {
             const lvlEl = opt.querySelector('.level');
             if (lvlEl) {
@@ -50,72 +27,62 @@
                 opt.style.display = (lvl >= state.minLvl && lvl <= state.maxLvl) ? "block" : "none";
             }
         });
-
-        // 2. SYNCHRONIZACJA: Wymuszamy poprawne liczby w polach tekstowych wszystkich zakładek
-        document.querySelectorAll('.js-min').forEach(input => {
-            if (parseInt(input.value) !== state.minLvl) input.value = state.minLvl;
-        });
-        document.querySelectorAll('.js-max').forEach(input => {
-            if (parseInt(input.value) !== state.maxLvl) input.value = state.maxLvl;
-        });
     };
 
-    // Tworzenie UI filtra
+    const saveAndExecute = (min, max) => {
+        state.minLvl = min;
+        state.maxLvl = max;
+        localStorage.setItem('mfo3_filter_min', min);
+        localStorage.setItem('mfo3_filter_max', max);
+        
+        document.querySelectorAll('.js-min').forEach(i => i.value = state.minLvl);
+        document.querySelectorAll('.js-max').forEach(i => i.value = state.maxLvl);
+        applyFiltration();
+    };
+
     const createUI = () => {
-        const ui = document.createElement('div');
-        ui.className = "mfo3-clean-filter";
-        ui.innerHTML = `
+        const div = document.createElement('div');
+        div.className = "mfo3-clean-filter";
+        div.innerHTML = `
             <span>LVL:</span>
             <input type="number" class="js-min" value="${state.minLvl}">
             <span>-</span>
             <input type="number" class="js-max" value="${state.maxLvl}">
-            <button class="mfo3-btn js-apply" style="background: #d4a76a;">OK</button>
-            <button class="mfo3-btn js-reset" style="background: #c2c2c2;">X</button>
+            <button class="mfo3-btn btn-ok" style="background: #d4a76a;">OK</button>
+            <button class="mfo3-btn btn-reset" style="background: #ccc;">X</button>
         `;
 
-        // Obsługa kliknięcia OK
-        ui.querySelector('.js-apply').onclick = (e) => {
+        div.querySelector('.btn-ok').onclick = (e) => {
             e.preventDefault();
-            state.minLvl = parseInt(ui.querySelector('.js-min').value) || 0;
-            state.maxLvl = parseInt(ui.querySelector('.js-max').value) || 999;
-            updateVisibility();
+            const m = parseInt(div.querySelector('.js-min').value);
+            const x = parseInt(div.querySelector('.js-max').value);
+            saveAndExecute(isNaN(m) ? 0 : m, isNaN(x) ? 999 : x);
         };
 
-        // Obsługa kliknięcia Reset (X)
-        ui.querySelector('.js-reset').onclick = (e) => {
+        div.querySelector('.btn-reset').onclick = (e) => {
             e.preventDefault();
-            state.minLvl = 0; 
-            state.maxLvl = 999;
-            updateVisibility();
+            saveAndExecute(0, 999);
         };
-
-        return ui;
+        
+        return div;
     };
 
-    // Pętla utrzymująca interfejs
-    const mainLoop = () => {
-        const containers = document.querySelectorAll('.PlayerArmorsCatalog .WUI_Concatenator:not(.footer)');
+    setInterval(() => {
+        const tabs = document.querySelectorAll('.PlayerArmorsCatalog .WUI_Concatenator:not(.footer)');
         
-        containers.forEach(container => {
-            // Jeśli zakładka nie ma filtra, dodajemy go
-            if (!container.querySelector('.mfo3-clean-filter')) {
-                container.prepend(createUI());
+        tabs.forEach(tab => {
+            if (!tab.querySelector('.mfo3-clean-filter')) {
+                tab.prepend(createUI());
             }
-
-            // Naprawa wysokości listy (żeby pasek nic nie zasłaniał)
-            const list = container.querySelector('.CatalogItems');
+            const list = tab.querySelector('.CatalogItems');
             if (list) {
-                list.style.height = "380px";
+                list.style.height = "385px";
                 list.style.overflowY = "auto";
             }
         });
 
-        // Sprzątanie duplikatów ze stopek
         document.querySelectorAll('.footer .mfo3-clean-filter').forEach(el => el.remove());
-        
-        // Stałe wymuszanie filtracji i synchronizacji wartości
-        updateVisibility();
-    };
+        applyFiltration();
+    }, 500);
 
-    setInterval(mainLoop, 400);
 })();
