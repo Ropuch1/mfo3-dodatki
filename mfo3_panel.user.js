@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         MFO3 - Panel Ropucha 
-// @version      4.2
+// @version      4.3
 // @match        https://s1.mfo3.pl/game/
 // @grant        GM_xmlhttpRequest
 // @connect      raw.githubusercontent.com
@@ -39,7 +39,7 @@
             cursor: move; user-select: none;
         `;
         
-        div.innerHTML = `<b id="panel-handle" style="color:#f1c40f; display:block; text-align:center; margin-bottom:8px; border-bottom:1px solid #7a5a3a; padding-bottom:5px;">☰ MENU ROPUCHA</b><div id="mfo-mods"></div>`;
+        div.innerHTML = `<b id="panel-handle" style="color:#f1c40f; display:block; text-align:center; margin-bottom:8px; border-bottom:1px solid #7a5a3a; padding-bottom:5px;"> DODATKI RZAPSONS </b><div id="mfo-mods"></div>`;
         document.body.appendChild(div);
 
         // --- FUNKCJA PRZESUWANIA (DRAG & DROP) ---
