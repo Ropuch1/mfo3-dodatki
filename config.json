@@ -3,9 +3,10 @@
     { "id": "wasd", "name": "Sterowanie WASD", "file": "wasd.js" },
     { "id": "heal", "name": "Leczenie (T/R M1/M1 )", "file": "leczenie.js" },
     { "id": "liczniki", "name": "Radar jajek", "file": "radarjajek.js" },
-    { "id": "potwory", "name": "potwory switch (V)", "file": "potwory.js"},
-    { "id": "autof", "name": "autof", "file": "autof.js"},
-    { "id": "portal", "name": "portal", "file": "portal.js"}
+    { "id": "potwory", "name": "Potwory switch (V)", "file": "potwory.js"},
+    { "id": "autof", "name": "Autof", "file": "autof.js"},
+    { "id": "portal", "name": "Portale - Bossy", "file": "portal.js"},
+    { "id": "filtr", "name": "Wyszukiwarka EQ", "file": "filtr.js"}
       
   ]
 }
