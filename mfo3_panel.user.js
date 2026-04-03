@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MFO3 - Panel Ropucha 
 // @version      4.2
-// @match        *://*.mfo3.pl/*
+// @match        https://s1.mfo3.pl/game/
 // @grant        GM_xmlhttpRequest
 // @connect      raw.githubusercontent.com
 // @run-at       document-end
