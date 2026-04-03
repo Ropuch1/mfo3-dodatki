@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         MFO3 - Panel Ropucha (ZAKOTWICZONY)
+// @name         MFO3 - Panel Ropucha 
 // @version      4.2
 // @match        *://*.mfo3.pl/*
 // @grant        GM_xmlhttpRequest
