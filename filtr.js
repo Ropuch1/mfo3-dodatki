@@ -7,8 +7,8 @@
     };
 
     let state = {
-        minLvl: getSaved('mfo3_filter_min', 0),
-        maxLvl: getSaved('mfo3_filter_max', 999)
+        minLvl: getSaved('mfo3_filter_min', 60),
+        maxLvl: getSaved('mfo3_filter_max', 100)
     };
 
     const style = document.createElement('style');
