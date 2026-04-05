@@ -133,7 +133,7 @@
 
         let html = `
             <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #444; padding-bottom:3px; margin-bottom:5px;">
-                <b style="color:#f1c40f; font-size:10px;">MALOWANIE <span style="color:#fff;">${lastTarget}</span></b>
+                <b style="color:#f1c40f; font-size:10px;">MALOWANIE</b>
                 <button id="res-btn" style="cursor:pointer; background:#95a5a6; color:white; border:none; border-radius:3px; font-size:9px; padding:0 3px;">R</button>
             </div>
         `;
