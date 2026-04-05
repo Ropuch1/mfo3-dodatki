@@ -8,7 +8,7 @@
     { "id": "portal", "name": "Portale - Bossy", "file": "portal.js"},
     { "id": "filtr", "name": "Wyszukiwarka EQ", "file": "filtr.js"},
     { "id": "jajka", "name": "Malowanie jajek", "file": "jajka.js"},
-    { "id": "jajka", "name": "Malowanie jajek", "file": "jajka2.js"}
+    { "id": "jajka2", "name": "Malowanie jajek", "file": "jajka2.js"}
       
   ]
 }
