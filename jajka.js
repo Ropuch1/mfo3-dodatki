@@ -9,7 +9,7 @@
     if (oldUi) oldUi.remove();
 
     const ui = document.createElement('div');
-    ui.id = "mfo3-solver-v54";
+    ui.id = "mfo3-solver-v1";
     ui.style.cssText = `
         position: fixed; top: ${savedPos.top}; left: ${savedPos.left}; z-index: 99999;
         background: rgba(10, 10, 10, 0.95); color: #f0f0f0; padding: 7px;
