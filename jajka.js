@@ -5,11 +5,11 @@
     const savedPos = JSON.parse(localStorage.getItem('mfo3_solver_pos')) || {top:"150px",left:"10px"};
     let memory = {a1:[], a2:[], e3:[]}, lastTarget = "";
 
-    const oldUi = document.getElementById('mfo3-solver-v53');
+    const oldUi = document.getElementById('mfo3-solver-v54');
     if (oldUi) oldUi.remove();
 
     const ui = document.createElement('div');
-    ui.id = "mfo3-solver-v53";
+    ui.id = "mfo3-solver-v54";
     ui.style.cssText = `
         position: fixed; top: ${savedPos.top}; left: ${savedPos.left}; z-index: 99999;
         background: rgba(10, 10, 10, 0.95); color: #f0f0f0; padding: 7px;
@@ -63,22 +63,25 @@
 
         let targetSorted = lastTarget.replace(/\s/g,'').split('').sort().join(''), sol = null;
 
-        for (let s1=0; s1<memory.a1.length; s1++) {
-            for (let s2=0; s2<memory.a2.length; s2++) {
-                for (let s3=0; s3<memory.e3.length; s3++) {
-                    let tA1=memory.a1[s1].split(''), tA2=memory.a2[s2].split(''), tE3=memory.e3[s3].split('');
-                    for (let r=0; r<5; r++) {
-                        let path=[], curX=r;
-                        path.push(d.e1[curX]?.s||'?');
-                        if(tA1[curX]==='→') curX=Math.min(4,curX+1); else if(tA1[curX]==='←') curX=Math.max(0,curX-1);
-                        path.push(d.e2[curX]?.s||'?');
-                        if(tA2[curX]==='→') curX=Math.min(4,curX+1); else if(tA2[curX]==='←') curX=Math.max(0,curX-1);
-                        path.push(tE3[curX]);
-                        if ([...path].sort().join('')===targetSorted) { sol={r:r+1,d1:s1+1,d3:s2+1,d2:s3+1}; break; }
-                    }
-                    if(sol) break;
+        // KRYTYCZNA ZMIANA: Szukaj rozwiązania TYLKO jeśli znamy przynajmniej jedną pełną sekwencję dla każdego D
+        if (memory.a1.length > 0 && memory.a2.length > 0 && memory.e3.length > 0) {
+            for (let s1=0; s1<memory.a1.length; s1++) {
+                for (let s2=0; s2<memory.a2.length; s2++) {
+                    for (let s3=0; s3<memory.e3.length; s3++) {
+                        let tA1=memory.a1[s1].split(''), tA2=memory.a2[s2].split(''), tE3=memory.e3[s3].split('');
+                        for (let r=0; r<5; r++) {
+                            let path=[], curX=r;
+                            path.push(d.e1[curX]?.s||'?');
+                            if(tA1[curX]==='→') curX=Math.min(4,curX+1); else if(tA1[curX]==='←') curX=Math.max(0,curX-1);
+                            path.push(d.e2[curX]?.s||'?');
+                            if(tA2[curX]==='→') curX=Math.min(4,curX+1); else if(tA2[curX]==='←') curX=Math.max(0,curX-1);
+                            path.push(tE3[curX]);
+                            if ([...path].sort().join('')===targetSorted) { sol={r:r+1,d1:s1+1,d3:s2+1,d2:s3+1}; break; }
+                        }
+                        if(sol) break;
+                    } if(sol) break;
                 } if(sol) break;
-            } if(sol) break;
+            }
         }
 
         let html = `<div style="display:flex;justify-content:space-between;margin-bottom:5px;border-bottom:1px solid #444;padding-bottom:2px;"><b style="color:#f1c40f;font-size:10px;">MALOWANIE</b><button id="res-btn" style="background:#95a5a6;color:white;border:none;border-radius:2px;font-size:9px;padding:0 3px;cursor:pointer;">R</button></div>`;
@@ -88,9 +91,11 @@
             let c1 = d.a1.map(a=>a.dir).join('')===memory.a1[sol.d1-1], c3 = d.a2.map(a=>a.dir).join('')===memory.a2[sol.d3-1], c2 = d.e3.map(e=>e.s).join('')===memory.e3[sol.d2-1];
             html += `<div style="font-size:10px;text-align:center;margin-bottom:4px;">D1:<b style="color:${c1?'#2ecc71':'#e74c3c'}">U${sol.d1}</b> D2:<b style="color:${c2?'#2ecc71':'#e74c3c'}">U${sol.d2}</b> D3:<b style="color:${c3?'#2ecc71':'#e74c3c'}">U${sol.d3}</b></div><div style="background:#1b4d2e;padding:3px;text-align:center;border-radius:4px;font-weight:bold;font-size:12px;border:1px solid #2ecc71;">RURA: ${sol.r}</div>`;
         } else {
-            let full = (memory.a1.length===2 && memory.a2.length===2 && memory.e3.length===2);
-            ui.style.borderColor = full ? "#e74c3c" : "#e67e22";
+            let full = (memory.a1.length >= 1 && memory.a2.length >= 1 && memory.e3.length >= 1);
+            ui.style.borderColor = (memory.a1.length === 2 && memory.a2.length === 2 && memory.e3.length === 2) ? "#e74c3c" : "#e67e22";
             html += `<div style="color:${full?'#e74c3c':'#95a5a6'};text-align:center;font-weight:bold;font-size:10px;padding:4px;">${full?'BRAK':'KLIKAJ DŹWIGNIE'}</div>`;
+            // Pomocniczy licznik postępu skanowania pod napisem
+            html += `<div style="font-size:8px; color:#666; text-align:center;">Postęp: D1(${memory.a1.length}/1) D2(${memory.e3.length}/1) D3(${memory.a2.length}/1)</div>`;
         }
         
         ui.innerHTML = html;
