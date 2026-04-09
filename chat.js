@@ -1,19 +1,8 @@
-// ==UserScript==
-// @name         MFO3 - Box Drużyna (Solver Style)
-// @version      22.0
-// @description  Wyświetla wiadomości z czatu drużynowego w stylowym, przesuwalnym boxie.
-// @author       Gemini
-// @match        https://s1.mfo3.pl/game/
-// @grant        none
-// ==/UserScript==
-
 (function() {
     'use strict';
 
-    // Pobieramy zapisaną pozycję (lub domyślną)
     const savedPos = JSON.parse(localStorage.getItem('mfo3_team_pos')) || {top: "250px", left: "10px"};
 
-    // 1. Kontener główny
     const teamUi = document.createElement('div');
     teamUi.id = "mfo3-team-box-solver-style";
     teamUi.style.cssText = `
@@ -35,7 +24,6 @@
     `;
     document.body.appendChild(teamUi);
 
-    // 2. Struktura wewnętrzna
     teamUi.innerHTML = `
         <div style="display:flex; justify-content:space-between; margin-bottom:5px; border-bottom:1px solid #444; padding-bottom:2px;">
             <b style="color:#e67e22; font-size:10px;">DRUŻYNA</b>
@@ -48,7 +36,6 @@
 
     const msgContainer = teamUi.querySelector('#team-messages-container');
 
-    // --- PRZECIĄGANIE (Z zapamiętywaniem pozycji) ---
     let isDragging = false, ox, oy;
     teamUi.onmousedown = (e) => {
         if(e.target.tagName !== 'BUTTON'){
@@ -75,32 +62,27 @@
         }
     });
 
-    // Przycisk X (czyści wiadomości)
     teamUi.querySelector('#team-res-btn').onclick = () => {
         msgContainer.innerHTML = '<div style="color:#666; font-size:9px; text-align:center; padding:5px;">Wyczyszczono.</div>';
     };
 
-    // --- FUNKCJA DODAWANIA WIADOMOŚCI ---
     function addTeamMessage(nick, text) {
         const placeholder = document.getElementById('team-placeholder');
         if(placeholder) placeholder.remove();
 
         const msgRow = document.createElement('div');
         msgRow.style.cssText = "margin-bottom: 4px; border-bottom: 1px solid #222; padding-bottom: 2px;";
-
         msgRow.innerHTML = `
             <b style="color:#f1c40f; font-size:10px;">${nick}:</b>
             <span style="color:#fff; font-size:10px;">${text}</span>
         `;
 
         msgContainer.prepend(msgRow);
-
         if (msgContainer.children.length > 10) {
             msgContainer.lastChild.remove();
         }
     }
 
-    // --- OBSERWATOR ---
     const observer = new MutationObserver((mutations) => {
         mutations.forEach(mutation => {
             mutation.addedNodes.forEach(node => {
@@ -117,5 +99,4 @@
     });
 
     observer.observe(document.body, { childList: true, subtree: true });
-
 })();
