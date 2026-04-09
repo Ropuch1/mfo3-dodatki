@@ -8,6 +8,7 @@
     { "id": "portal", "name": "Portale - Bossy", "file": "portal.js"},
     { "id": "filtr", "name": "Wyszukiwarka EQ", "file": "filtr.js"},
     { "id": "jajka", "name": "Malowanie jajek", "file": "jajka.js"},
-    { "id": "piorko", "name": "Piórko Garudy", "file": "piorko.js"}
+    { "id": "piorko", "name": "Piórko Garudy", "file": "piorko.js"},
+    { "id": "chat", "name": "LL Drużyna ", "file": "chat.js"}
   ]
 }
