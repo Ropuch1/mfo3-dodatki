@@ -18,6 +18,7 @@
             box-sizing: border-box; min-width: 220px;
             max-width: 95vw; max-height: 95vh;
             resize: both; overflow: hidden;
+            user-select: none; /* Blokada zaznaczania domyślnie */
         }
         #mfo3-chat-ui.minimized {
             height: auto !important; min-height: 0 !important; resize: none;
@@ -30,6 +31,7 @@
             flex-grow: 1; overflow-y: auto; background: #000;
             padding: 8px; margin-bottom: 5px; font-size: 11px;
             border: 1px solid #333; scroll-behavior: smooth;
+            user-select: text; /* Tu pozwalamy zaznaczać, żeby skopiować treść */
         }
         #online-indicator {
             cursor: pointer; color: #2ecc71; font-size: 11px; 
@@ -47,6 +49,7 @@
             width: 100%; background: #222; border: 1px solid #e67e22;
             color: white; padding: 6px; border-radius: 3px;
             outline: none; font-size: 12px; box-sizing: border-box;
+            user-select: text;
         }
         .chat-btn { cursor: pointer; margin-left: 8px; font-weight: bold; font-size: 14px; user-select: none; }
         #toggle-chat { color: #f1c40f; }
@@ -75,7 +78,7 @@
 
     ui.innerHTML = `
         <div id="chat-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px; border-bottom:1px solid #e67e22; padding-bottom:4px; cursor:move;">
-            <b style="color:#e67e22; font-size:11px;">GLOBAL CHAT</b>
+            <b style="color:#e67e22; font-size:11px; pointer-events:none;">GLOBAL CHAT</b>
             <div style="display:flex; align-items:center;">
                 <span id="online-indicator" data-online-list="Ładowanie...">● Online</span>
                 <span id="toggle-chat" class="chat-btn">${settings.minimized ? '▢' : '_'}</span>
@@ -91,7 +94,6 @@
     const onlineSign = ui.querySelector('#online-indicator');
     const toggleBtn = ui.querySelector('#toggle-chat');
 
-    // Funkcja zapisu
     const saveSettings = () => {
         const isMin = ui.classList.contains('minimized');
         localStorage.setItem('mfo3_chat_v6', JSON.stringify({
@@ -107,11 +109,10 @@
     toggleBtn.onclick = () => {
         const isMin = ui.classList.toggle('minimized');
         toggleBtn.innerText = isMin ? '▢' : '_';
-        ui.style.height = isMin ? "auto" : settings.height + "px";
+        ui.style.height = isMin ? "auto" : (parseInt(ui.style.height) || settings.height) + "px";
         saveSettings();
     };
 
-    // Monitorowanie zmiany rozmiaru przez użytkownika (resize: both)
     const resizeObserver = new ResizeObserver(() => {
         if (!ui.classList.contains('minimized')) {
             saveSettings();
@@ -142,7 +143,7 @@
         }
         const enemySection = battleMenu.querySelector('.BattleMenuLeft');
         const isZajaczek = enemySection && Array.from(enemySection.querySelectorAll('.item .name'))
-                                 .some(el => el.innerText.includes("Zajączek Wielkanocny"));
+                                     .some(el => el.innerText.includes("Zajączek Wielkanocny"));
         if (isZajaczek && battleMenu.querySelectorAll('.BattleMenuCenter .items .item').length === 1 && !hasCalledForHelp) {
             hasCalledForHelp = true;
             sendMessage("Pomocy! Biję Zajączka Wielkanocnego solo!");
@@ -191,21 +192,39 @@
         }
     };
 
-    // --- DRAG LOGIC ---
+    // --- DRAG LOGIC (Poprawiony o blokadę zaznaczania) ---
     let isDragging = false, oL, oT;
-    ui.addEventListener('mousedown', (e) => { if (e.target.id === 'chat-header') { isDragging = true; oL = e.clientX - ui.offsetLeft; oT = e.clientY - ui.offsetTop; } });
+    ui.addEventListener('mousedown', (e) => { 
+        if (e.target.id === 'chat-header') { 
+            isDragging = true; 
+            oL = e.clientX - ui.offsetLeft; 
+            oT = e.clientY - ui.offsetTop; 
+            document.body.style.userSelect = 'none'; // Blokada zaznaczania strony podczas ruchu
+        } 
+    });
+
     document.addEventListener('mousemove', (e) => { 
         if (isDragging) { 
             let x = Math.max(0, Math.min(e.clientX - oL, window.innerWidth - ui.offsetWidth));
             let y = Math.max(0, Math.min(e.clientY - oT, window.innerHeight - ui.offsetHeight));
-            ui.style.left = x + 'px'; ui.style.top = y + 'px';
+            ui.style.left = x + 'px'; 
+            ui.style.top = y + 'px';
         } 
     });
-    document.addEventListener('mouseup', () => { if (isDragging) { isDragging = false; saveSettings(); } });
+
+    document.addEventListener('mouseup', () => { 
+        if (isDragging) { 
+            isDragging = false; 
+            document.body.style.userSelect = ''; // Odblokowanie zaznaczania
+            saveSettings(); 
+        } 
+    });
 
     window.addEventListener('resize', () => {
-        ui.style.left = Math.min(parseInt(ui.style.left), window.innerWidth - ui.offsetWidth) + 'px';
-        ui.style.top = Math.min(parseInt(ui.style.top), window.innerHeight - ui.offsetHeight) + 'px';
+        const x = Math.max(0, Math.min(parseInt(ui.style.left), window.innerWidth - ui.offsetWidth));
+        const y = Math.max(0, Math.min(parseInt(ui.style.top), window.innerHeight - ui.offsetHeight));
+        ui.style.left = x + 'px';
+        ui.style.top = y + 'px';
     });
 
     setInterval(fetchMessages, 3000);
