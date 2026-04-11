@@ -1,7 +1,6 @@
 (function() {
     'use strict';
 
-    // --- KONFIGURACJA BAZY DANYCH ---
     const dbURL = "https://lootlogmfo-default-rtdb.europe-west1.firebasedatabase.app/";
     const chatURL = dbURL + "global_chat.json";
     const onlineURL = dbURL + "online_users"; 
@@ -16,8 +15,16 @@
             color: #f0f0f0; padding: 8px; border: 2px solid #e67e22;
             border-radius: 8px; font-family: Arial, sans-serif;
             box-shadow: 0 0 15px #000; display: flex; flex-direction: column;
-            box-sizing: border-box; min-width: 220px; min-height: 150px;
+            box-sizing: border-box; min-width: 220px;
+            max-width: 95vw; max-height: 95vh;
             resize: both; overflow: hidden;
+        }
+        #mfo3-chat-ui.minimized {
+            height: auto !important; min-height: 0 !important; resize: none;
+        }
+        #mfo3-chat-ui.minimized #global-msg-container, 
+        #mfo3-chat-ui.minimized #global-input {
+            display: none;
         }
         #global-msg-container {
             flex-grow: 1; overflow-y: auto; background: #000;
@@ -41,27 +48,38 @@
             color: white; padding: 6px; border-radius: 3px;
             outline: none; font-size: 12px; box-sizing: border-box;
         }
+        .chat-btn { cursor: pointer; margin-left: 8px; font-weight: bold; font-size: 14px; user-select: none; }
+        #toggle-chat { color: #f1c40f; }
+        #close-chat { color: #e74c3c; }
     `;
     document.head.appendChild(style);
 
-    // --- INICJALIZACJA UI ---
-    const settings = JSON.parse(localStorage.getItem('mfo3_chat_v5')) || {
-        top: 300, left: 10, width: 280, height: 200
+    // --- WCZYTYWANIE USTAWIEŃ ---
+    const settings = JSON.parse(localStorage.getItem('mfo3_chat_v6')) || {
+        top: 300, left: 10, width: 280, height: 200, minimized: false
     };
 
     const ui = document.createElement('div');
     ui.id = "mfo3-chat-ui";
-    ui.style.top = settings.top + "px";
-    ui.style.left = settings.left + "px";
+    if (settings.minimized) ui.classList.add('minimized');
+
+    // Walidacja pozycji
+    const startLeft = Math.max(0, Math.min(settings.left, window.innerWidth - settings.width));
+    const startTop = Math.max(0, Math.min(settings.top, window.innerHeight - 40));
+
+    ui.style.top = startTop + "px";
+    ui.style.left = startLeft + "px";
     ui.style.width = settings.width + "px";
+    ui.style.height = settings.minimized ? "auto" : settings.height + "px";
     document.body.appendChild(ui);
 
     ui.innerHTML = `
-        <div id="chat-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px; border-bottom:1px solid #e67e22; padding-bottom:4px; cursor:move; user-select:none;">
+        <div id="chat-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px; border-bottom:1px solid #e67e22; padding-bottom:4px; cursor:move;">
             <b style="color:#e67e22; font-size:11px;">GLOBAL CHAT</b>
             <div style="display:flex; align-items:center;">
-                <span id="online-indicator" data-online-list="Czekam na dane...">● Online</span>
-                <span id="close-chat" style="cursor:pointer; color:#e74c3c; font-weight:bold; font-size:16px; line-height:1;">&times;</span>
+                <span id="online-indicator" data-online-list="Ładowanie...">● Online</span>
+                <span id="toggle-chat" class="chat-btn">${settings.minimized ? '▢' : '_'}</span>
+                <span id="close-chat" class="chat-btn">&times;</span>
             </div>
         </div>
         <div id="global-msg-container"></div>
@@ -71,7 +89,35 @@
     const container = ui.querySelector('#global-msg-container');
     const input = ui.querySelector('#global-input');
     const onlineSign = ui.querySelector('#online-indicator');
-    container.style.height = settings.height + "px";
+    const toggleBtn = ui.querySelector('#toggle-chat');
+
+    // Funkcja zapisu
+    const saveSettings = () => {
+        const isMin = ui.classList.contains('minimized');
+        localStorage.setItem('mfo3_chat_v6', JSON.stringify({
+            top: parseInt(ui.style.top),
+            left: parseInt(ui.style.left),
+            width: parseInt(ui.style.width),
+            height: isMin ? settings.height : parseInt(ui.style.height),
+            minimized: isMin
+        }));
+    };
+
+    // Obsługa zwijania
+    toggleBtn.onclick = () => {
+        const isMin = ui.classList.toggle('minimized');
+        toggleBtn.innerText = isMin ? '▢' : '_';
+        ui.style.height = isMin ? "auto" : settings.height + "px";
+        saveSettings();
+    };
+
+    // Monitorowanie zmiany rozmiaru przez użytkownika (resize: both)
+    const resizeObserver = new ResizeObserver(() => {
+        if (!ui.classList.contains('minimized')) {
+            saveSettings();
+        }
+    });
+    resizeObserver.observe(ui);
 
     const getMyNick = () => {
         const nick = document.querySelector('.name .profile')?.innerText;
@@ -88,41 +134,24 @@
         } catch (err) { }
     }
 
-    // --- LOGIKA WALKI: ZAJĄCZEK SOLO ---
+    // --- LOGIKA WALKI ---
     function checkZajaczekSolo() {
         const battleMenu = document.querySelector('.BattleMenu');
-        
-        // Sprawdź czy walka jest aktywna
         if (!battleMenu || battleMenu.offsetParent === null || battleMenu.style.display === 'none') {
-            hasCalledForHelp = false; 
-            return;
+            hasCalledForHelp = false; return;
         }
-
-        // 1. Sprawdź czy przeciwnikiem jest Zajączek
         const enemySection = battleMenu.querySelector('.BattleMenuLeft');
         const isZajaczek = enemySection && Array.from(enemySection.querySelectorAll('.item .name'))
-                                .some(el => el.innerText.includes("Zajączek Wielkanocny"));
-
-        // 2. Sprawdź czy jesteś sam w teamie
-        const alliesItems = battleMenu.querySelectorAll('.BattleMenuCenter .items .item');
-        const isSolo = alliesItems.length === 1;
-
-        // Jeśli warunki spełnione i jeszcze nie wołał
-        if (isZajaczek && isSolo && !hasCalledForHelp) {
+                                 .some(el => el.innerText.includes("Zajączek Wielkanocny"));
+        if (isZajaczek && battleMenu.querySelectorAll('.BattleMenuCenter .items .item').length === 1 && !hasCalledForHelp) {
             hasCalledForHelp = true;
             sendMessage("Pomocy! Biję Zajączka Wielkanocnego solo!");
         }
     }
 
-    // --- OBSŁUGA CZATU I ONLINE ---
+    // --- CHAT LOGIC ---
     async function updatePresence() {
-        const nick = getMyNick();
-        try {
-            await fetch(`${onlineURL}/${nick}.json`, {
-                method: 'PUT',
-                body: JSON.stringify({ lastActive: { ".sv": "timestamp" } })
-            });
-        } catch (e) { }
+        try { await fetch(`${onlineURL}/${getMyNick()}.json`, { method: 'PUT', body: JSON.stringify({ lastActive: { ".sv": "timestamp" } }) }); } catch (e) { }
     }
 
     async function fetchOnlineUsers() {
@@ -131,16 +160,14 @@
             const data = await response.json();
             if (!data) return;
             const now = Date.now();
-            let onlineList = [];
-            for (let nick in data) {
-                if (now - data[nick].lastActive < 25000) onlineList.push(nick);
-            }
+            let onlineList = Object.keys(data).filter(nick => now - data[nick].lastActive < 25000);
             onlineSign.innerText = `● ${onlineList.length}`;
             onlineSign.setAttribute('data-online-list', "Gracze online:\n" + onlineList.join('\n'));
         } catch (e) { }
     }
 
     async function fetchMessages() {
+        if (ui.classList.contains('minimized')) return;
         try {
             const response = await fetch(`${chatURL}?orderBy="$key"&limitToLast=40`);
             const data = await response.json();
@@ -157,29 +184,35 @@
         } catch (err) { }
     }
 
-    input.onkeypress = function(e) {
+    input.onkeypress = (e) => {
         if (e.key === 'Enter' && input.value.trim() !== "") {
             sendMessage(input.value);
             input.value = "";
         }
     };
 
-    // --- PRZESUWANIE ---
+    // --- DRAG LOGIC ---
     let isDragging = false, oL, oT;
     ui.addEventListener('mousedown', (e) => { if (e.target.id === 'chat-header') { isDragging = true; oL = e.clientX - ui.offsetLeft; oT = e.clientY - ui.offsetTop; } });
-    document.addEventListener('mousemove', (e) => { if (isDragging) { ui.style.left = (e.clientX - oL) + 'px'; ui.style.top = (e.clientY - oT) + 'px'; } });
-    document.addEventListener('mouseup', () => { if (isDragging) { isDragging = false; localStorage.setItem('mfo3_chat_v5', JSON.stringify({ top: parseInt(ui.style.top), left: parseInt(ui.style.left), width: parseInt(ui.style.width), height: parseInt(container.offsetHeight) })); } });
+    document.addEventListener('mousemove', (e) => { 
+        if (isDragging) { 
+            let x = Math.max(0, Math.min(e.clientX - oL, window.innerWidth - ui.offsetWidth));
+            let y = Math.max(0, Math.min(e.clientY - oT, window.innerHeight - ui.offsetHeight));
+            ui.style.left = x + 'px'; ui.style.top = y + 'px';
+        } 
+    });
+    document.addEventListener('mouseup', () => { if (isDragging) { isDragging = false; saveSettings(); } });
 
-    // --- START ---
+    window.addEventListener('resize', () => {
+        ui.style.left = Math.min(parseInt(ui.style.left), window.innerWidth - ui.offsetWidth) + 'px';
+        ui.style.top = Math.min(parseInt(ui.style.top), window.innerHeight - ui.offsetHeight) + 'px';
+    });
+
     setInterval(fetchMessages, 3000);
     setInterval(updatePresence, 15000);
     setInterval(fetchOnlineUsers, 7000);
     setInterval(checkZajaczekSolo, 2000); 
     
-    fetchMessages();
-    updatePresence();
-    fetchOnlineUsers();
-
+    fetchMessages(); updatePresence(); fetchOnlineUsers();
     ui.querySelector('#close-chat').onclick = () => ui.remove();
-
 })();
