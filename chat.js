@@ -18,7 +18,7 @@
             box-sizing: border-box; min-width: 220px;
             max-width: 95vw; max-height: 95vh;
             resize: both; overflow: hidden;
-            user-select: none; /* Blokada zaznaczania domyślnie */
+            user-select: none;
         }
         #mfo3-chat-ui.minimized {
             height: auto !important; min-height: 0 !important; resize: none;
@@ -31,7 +31,7 @@
             flex-grow: 1; overflow-y: auto; background: #000;
             padding: 8px; margin-bottom: 5px; font-size: 11px;
             border: 1px solid #333; scroll-behavior: smooth;
-            user-select: text; /* Tu pozwalamy zaznaczać, żeby skopiować treść */
+            user-select: text;
         }
         #online-indicator {
             cursor: pointer; color: #2ecc71; font-size: 11px; 
@@ -66,7 +66,6 @@
     ui.id = "mfo3-chat-ui";
     if (settings.minimized) ui.classList.add('minimized');
 
-    // Walidacja pozycji
     const startLeft = Math.max(0, Math.min(settings.left, window.innerWidth - settings.width));
     const startTop = Math.max(0, Math.min(settings.top, window.innerHeight - 40));
 
@@ -105,18 +104,15 @@
         }));
     };
 
-    // Obsługa zwijania
     toggleBtn.onclick = () => {
         const isMin = ui.classList.toggle('minimized');
         toggleBtn.innerText = isMin ? '▢' : '_';
-        ui.style.height = isMin ? "auto" : (parseInt(ui.style.height) || settings.height) + "px";
+        ui.style.height = isMin ? "auto" : settings.height + "px";
         saveSettings();
     };
 
     const resizeObserver = new ResizeObserver(() => {
-        if (!ui.classList.contains('minimized')) {
-            saveSettings();
-        }
+        if (!ui.classList.contains('minimized')) saveSettings();
     });
     resizeObserver.observe(ui);
 
@@ -135,15 +131,24 @@
         } catch (err) { }
     }
 
-    // --- LOGIKA WALKI ---
+    // --- LOGIKA WALKI (Zoptymalizowana pod mapę) ---
     function checkZajaczekSolo() {
+        const mapTitle = document.getElementById('MapBox_title')?.innerText;
+        if (mapTitle !== "Polana Dzikich Zajęcy") {
+            hasCalledForHelp = false;
+            return; 
+        }
+
         const battleMenu = document.querySelector('.BattleMenu');
         if (!battleMenu || battleMenu.offsetParent === null || battleMenu.style.display === 'none') {
-            hasCalledForHelp = false; return;
+            hasCalledForHelp = false; 
+            return;
         }
+
         const enemySection = battleMenu.querySelector('.BattleMenuLeft');
         const isZajaczek = enemySection && Array.from(enemySection.querySelectorAll('.item .name'))
                                      .some(el => el.innerText.includes("Zajączek Wielkanocny"));
+
         if (isZajaczek && battleMenu.querySelectorAll('.BattleMenuCenter .items .item').length === 1 && !hasCalledForHelp) {
             hasCalledForHelp = true;
             sendMessage("Pomocy! Biję Zajączka Wielkanocnego solo!");
@@ -192,14 +197,14 @@
         }
     };
 
-    // --- DRAG LOGIC (Poprawiony o blokadę zaznaczania) ---
+    // --- DRAG LOGIC ---
     let isDragging = false, oL, oT;
     ui.addEventListener('mousedown', (e) => { 
         if (e.target.id === 'chat-header') { 
             isDragging = true; 
             oL = e.clientX - ui.offsetLeft; 
             oT = e.clientY - ui.offsetTop; 
-            document.body.style.userSelect = 'none'; // Blokada zaznaczania strony podczas ruchu
+            document.body.style.userSelect = 'none';
         } 
     });
 
@@ -207,24 +212,21 @@
         if (isDragging) { 
             let x = Math.max(0, Math.min(e.clientX - oL, window.innerWidth - ui.offsetWidth));
             let y = Math.max(0, Math.min(e.clientY - oT, window.innerHeight - ui.offsetHeight));
-            ui.style.left = x + 'px'; 
-            ui.style.top = y + 'px';
+            ui.style.left = x + 'px'; ui.style.top = y + 'px';
         } 
     });
 
     document.addEventListener('mouseup', () => { 
         if (isDragging) { 
             isDragging = false; 
-            document.body.style.userSelect = ''; // Odblokowanie zaznaczania
+            document.body.style.userSelect = '';
             saveSettings(); 
         } 
     });
 
     window.addEventListener('resize', () => {
-        const x = Math.max(0, Math.min(parseInt(ui.style.left), window.innerWidth - ui.offsetWidth));
-        const y = Math.max(0, Math.min(parseInt(ui.style.top), window.innerHeight - ui.offsetHeight));
-        ui.style.left = x + 'px';
-        ui.style.top = y + 'px';
+        ui.style.left = Math.min(parseInt(ui.style.left), window.innerWidth - ui.offsetWidth) + 'px';
+        ui.style.top = Math.min(parseInt(ui.style.top), window.innerHeight - ui.offsetHeight) + 'px';
     });
 
     setInterval(fetchMessages, 3000);
