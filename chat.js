@@ -1,12 +1,14 @@
 (function() {
     'use strict';
 
-    // --- KONFIGURACJA ---
+    // --- KONFIGURACJA BAZY DANYCH ---
     const dbURL = "https://lootlogmfo-default-rtdb.europe-west1.firebasedatabase.app/";
     const chatURL = dbURL + "global_chat.json";
-    const onlineURL = dbURL + "online_users"; // Bez .json tutaj, dodamy go w fetchach
+    const onlineURL = dbURL + "online_users"; 
 
-    // --- STYLE CSS ---
+    let hasCalledForHelp = false;
+
+    // --- DODAWANIE STYLI ---
     const style = document.createElement('style');
     style.innerHTML = `
         #mfo3-chat-ui {
@@ -42,7 +44,7 @@
     `;
     document.head.appendChild(style);
 
-    // --- STAN I USTAWIENIA ---
+    // --- INICJALIZACJA UI ---
     const settings = JSON.parse(localStorage.getItem('mfo3_chat_v5')) || {
         top: 300, left: 10, width: 280, height: 200
     };
@@ -76,16 +78,51 @@
         return nick ? nick.trim() : "Anonim";
     };
 
-    // --- FUNKCJA OBECNOŚCI (HEARTBEAT) ---
+    async function sendMessage(text) {
+        try {
+            await fetch(chatURL, {
+                method: 'POST',
+                body: JSON.stringify({ nick: getMyNick(), msg: text, time: { ".sv": "timestamp" } })
+            });
+            fetchMessages();
+        } catch (err) { }
+    }
+
+    // --- LOGIKA WALKI: ZAJĄCZEK SOLO ---
+    function checkZajaczekSolo() {
+        const battleMenu = document.querySelector('.BattleMenu');
+        
+        // Sprawdź czy walka jest aktywna
+        if (!battleMenu || battleMenu.offsetParent === null || battleMenu.style.display === 'none') {
+            hasCalledForHelp = false; 
+            return;
+        }
+
+        // 1. Sprawdź czy przeciwnikiem jest Zajączek
+        const enemySection = battleMenu.querySelector('.BattleMenuLeft');
+        const isZajaczek = enemySection && Array.from(enemySection.querySelectorAll('.item .name'))
+                                .some(el => el.innerText.includes("Zajączek Wielkanocny"));
+
+        // 2. Sprawdź czy jesteś sam w teamie
+        const alliesItems = battleMenu.querySelectorAll('.BattleMenuCenter .items .item');
+        const isSolo = alliesItems.length === 1;
+
+        // Jeśli warunki spełnione i jeszcze nie wołał
+        if (isZajaczek && isSolo && !hasCalledForHelp) {
+            hasCalledForHelp = true;
+            sendMessage("Pomocy! Biję Zajączka Wielkanocnego solo!");
+        }
+    }
+
+    // --- OBSŁUGA CZATU I ONLINE ---
     async function updatePresence() {
         const nick = getMyNick();
         try {
-            // Używamy .sv: timestamp aby uniknąć problemów z zegarem lokalnym
             await fetch(`${onlineURL}/${nick}.json`, {
                 method: 'PUT',
                 body: JSON.stringify({ lastActive: { ".sv": "timestamp" } })
             });
-        } catch (e) { console.warn("Presence Error", e); }
+        } catch (e) { }
     }
 
     async function fetchOnlineUsers() {
@@ -93,29 +130,21 @@
             const response = await fetch(`${onlineURL}.json`);
             const data = await response.json();
             if (!data) return;
-
             const now = Date.now();
             let onlineList = [];
-
             for (let nick in data) {
-                // Jeśli serwer odnotował aktywność w ciągu ostatnich 25 sekund
-                if (now - data[nick].lastActive < 25000) {
-                    onlineList.push(nick);
-                }
+                if (now - data[nick].lastActive < 25000) onlineList.push(nick);
             }
-            
             onlineSign.innerText = `● ${onlineList.length}`;
-            onlineSign.setAttribute('data-online-list', "Gracze online:\n" + (onlineList.length > 0 ? onlineList.join('\n') : "Nikt :("));
-        } catch (e) { console.warn("Fetch Online Error", e); }
+            onlineSign.setAttribute('data-online-list', "Gracze online:\n" + onlineList.join('\n'));
+        } catch (e) { }
     }
 
-    // --- FUNKCJE CZATU ---
     async function fetchMessages() {
         try {
             const response = await fetch(`${chatURL}?orderBy="$key"&limitToLast=40`);
             const data = await response.json();
             if (!data) return;
-
             container.innerHTML = "";
             Object.keys(data).forEach(id => {
                 const m = data[id];
@@ -125,56 +154,27 @@
                 container.appendChild(div);
             });
             container.scrollTop = container.scrollHeight;
-        } catch (err) { console.warn("Fetch Msg Error", err); }
+        } catch (err) { }
     }
 
-    input.onkeypress = async function(e) {
+    input.onkeypress = function(e) {
         if (e.key === 'Enter' && input.value.trim() !== "") {
-            const msg = input.value;
+            sendMessage(input.value);
             input.value = "";
-            try {
-                await fetch(chatURL, {
-                    method: 'POST',
-                    body: JSON.stringify({ nick: getMyNick(), msg: msg, time: { ".sv": "timestamp" } })
-                });
-                fetchMessages();
-            } catch (err) {}
         }
     };
 
-    // --- PRZESUWANIE OKNA ---
+    // --- PRZESUWANIE ---
     let isDragging = false, oL, oT;
-    ui.addEventListener('mousedown', (e) => {
-        if (e.target.id === 'chat-header') {
-            isDragging = true;
-            oL = e.clientX - ui.offsetLeft;
-            oT = e.clientY - ui.offsetTop;
-        }
-    });
-
-    document.addEventListener('mousemove', (e) => {
-        if (isDragging) {
-            ui.style.left = (e.clientX - oL) + 'px';
-            ui.style.top = (e.clientY - oT) + 'px';
-        }
-    });
-
-    document.addEventListener('mouseup', () => {
-        if (isDragging || ui.style.width) {
-            isDragging = false;
-            localStorage.setItem('mfo3_chat_v5', JSON.stringify({
-                top: parseInt(ui.style.top),
-                left: parseInt(ui.style.left),
-                width: parseInt(ui.style.width),
-                height: parseInt(container.offsetHeight)
-            }));
-        }
-    });
+    ui.addEventListener('mousedown', (e) => { if (e.target.id === 'chat-header') { isDragging = true; oL = e.clientX - ui.offsetLeft; oT = e.clientY - ui.offsetTop; } });
+    document.addEventListener('mousemove', (e) => { if (isDragging) { ui.style.left = (e.clientX - oL) + 'px'; ui.style.top = (e.clientY - oT) + 'px'; } });
+    document.addEventListener('mouseup', () => { if (isDragging) { isDragging = false; localStorage.setItem('mfo3_chat_v5', JSON.stringify({ top: parseInt(ui.style.top), left: parseInt(ui.style.left), width: parseInt(ui.style.width), height: parseInt(container.offsetHeight) })); } });
 
     // --- START ---
     setInterval(fetchMessages, 3000);
-    setInterval(updatePresence, 15000); // Co 15 sekund daj znać, że żyjesz
-    setInterval(fetchOnlineUsers, 7000); // Co 7 sekund sprawdź listę
+    setInterval(updatePresence, 15000);
+    setInterval(fetchOnlineUsers, 7000);
+    setInterval(checkZajaczekSolo, 2000); 
     
     fetchMessages();
     updatePresence();
