@@ -1,7 +1,7 @@
 (function() {
     'use strict';
 
-    // Wczytywanie ustawień (pozycja i stan zwinięcia)
+    // Wczytywanie ustawień
     const settings = JSON.parse(localStorage.getItem('mfo3_radar_settings')) || { 
         top: "60px", 
         left: "10px", 
@@ -25,7 +25,7 @@
         localStorage.setItem('mfo3_radar_settings', JSON.stringify(settings));
     }
 
-    // --- DRAG & DROP ---
+    // --- DRAG & DROP Z BLOKADĄ KRAWĘDZI ---
     let isDragging = false, offsetX, offsetY;
     display.addEventListener('mousedown', (e) => {
         if (e.target.tagName === 'BUTTON' || e.target.classList.contains('ctrl-btn')) return;
@@ -36,8 +36,20 @@
 
     document.addEventListener('mousemove', (e) => {
         if (!isDragging) return;
-        settings.left = (e.clientX - offsetX) + 'px';
-        settings.top = (e.clientY - offsetY) + 'px';
+        
+        // Oblicz nową pozycję
+        let x = e.clientX - offsetX;
+        let y = e.clientY - offsetY;
+
+        // Ograniczenia okna (Clamping)
+        const maxX = window.innerWidth - display.offsetWidth;
+        const maxY = window.innerHeight - display.offsetHeight;
+
+        x = Math.max(0, Math.min(x, maxX));
+        y = Math.max(0, Math.min(y, maxY));
+
+        settings.left = x + 'px';
+        settings.top = y + 'px';
         display.style.left = settings.left;
         display.style.top = settings.top;
     });
@@ -46,7 +58,7 @@
         if (isDragging) { isDragging = false; saveSettings(); }
     });
 
-    // --- LOGIKA ---
+    // --- LOGIKA RADARU ---
     function updateCounter(val) {
         count = Math.max(0, count + val);
         localStorage.setItem('mfo3_egg_counter', count);
@@ -69,15 +81,37 @@
 
     function render() {
         const found = scan();
-        display.innerHTML = `
-            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #444; padding-bottom: 4px; margin-bottom: 8px;">
-                <b style="color: #f1c40f;">🥚 Radar</b>
-                <div style="display: flex; gap: 8px;">
-                    <span id="r-min" class="ctrl-btn" style="cursor:pointer; color:#f1c40f; font-weight:bold;">${settings.minimized ? '▢' : '_'}</span>
-                    <span id="r-close" class="ctrl-btn" style="cursor:pointer; color:#e74c3c; font-weight:bold;">&times;</span>
+        
+        // Główny szkielet (renderujemy raz, żeby nie psuć eventów przycisków w kółko)
+        if (!display.querySelector('#radar-content-wrapper')) {
+            display.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #444; padding-bottom: 4px; margin-bottom: 8px;">
+                    <b style="color: #f1c40f;">🥚 Radar</b>
+                    <div style="display: flex; gap: 8px;">
+                        <span id="r-min" class="ctrl-btn" style="cursor:pointer; color:#f1c40f; font-weight:bold;">${settings.minimized ? '▢' : '_'}</span>
+                        <span id="r-close" class="ctrl-btn" style="cursor:pointer; color:#e74c3c; font-weight:bold;">&times;</span>
+                    </div>
                 </div>
-            </div>
-            <div id="radar-content" style="display: ${settings.minimized ? 'none' : 'block'};">
+                <div id="radar-content-wrapper"></div>`;
+        }
+
+        const wrapper = display.querySelector('#radar-content-wrapper');
+        wrapper.style.display = settings.minimized ? 'none' : 'block';
+        display.querySelector('#r-min').innerText = settings.minimized ? '▢' : '_';
+
+        if (!settings.minimized) {
+            let listHtml = '';
+            if (found.length > 0) {
+                found.forEach((egg, i) => {
+                    listHtml += `<div style="font-size:11px; margin-top:2px;">#${i+1}: <b style="color:#2ecc71;">${egg.x}, ${egg.y}</b></div>`;
+                });
+                display.style.borderColor = "#2ecc71";
+            } else {
+                listHtml = '<div style="color:#95a5a6; font-size:11px; margin-top:5px; font-style: italic;">Brak jajek</div>';
+                display.style.borderColor = "#e74c3c";
+            }
+
+            wrapper.innerHTML = `
                 <div style="margin: 5px 0; text-align: center; background: rgba(255,255,255,0.1); padding: 5px; border-radius: 4px;">
                     <b style="font-size: 16px; color: #fff;">${count}</b>
                     <div style="margin-top: 5px; display: flex; justify-content: center; gap: 4px;">
@@ -86,20 +120,9 @@
                         <button id="e-r" style="background:#95a5a6; color:white; border:none; border-radius:3px; font-size:9px; cursor:pointer;">R</button>
                     </div>
                 </div>
-                <div id="egg-list"></div>
-            </div>`;
+                <div id="egg-list">${listHtml}</div>`;
 
-        const eggList = display.querySelector('#egg-list');
-        if (!settings.minimized) {
-            if (found.length > 0) {
-                found.forEach((egg, i) => {
-                    eggList.innerHTML += `<div style="font-size:11px; margin-top:2px;">#${i+1}: <b style="color:#2ecc71;">${egg.x}, ${egg.y}</b></div>`;
-                });
-                display.style.borderColor = "#2ecc71";
-            } else {
-                eggList.innerHTML = '<div style="color:#95a5a6; font-size:11px; margin-top:5px; font-style: italic;">Brak jajek</div>';
-                display.style.borderColor = "#e74c3c";
-            }
+            // Podpięcie eventów
             display.querySelector('#e-p').onclick = () => updateCounter(1);
             display.querySelector('#e-m').onclick = () => updateCounter(-1);
             display.querySelector('#e-r').onclick = () => { if(confirm("Reset?")) updateCounter(-count); };
