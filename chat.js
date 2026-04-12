@@ -7,7 +7,7 @@
     const onlineURL = dbURL + "online_users"; 
 
     // Ten klucz musi być identyczny jak w regułach Firebase
-    const APP_SECRET = "MFO3_PANEL_ROP_99";
+    const APP_SECRET = "MFO3_PANEL_ROP_9";
 
 
     let hasCalledForHelp = false;
