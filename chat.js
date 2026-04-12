@@ -1,12 +1,13 @@
 (function() {
     'use strict';
 
-    // --- KONFIGURACJA I ZABEZPIECZENIA ---
+    // --- KONFIGURACJA ---
     const dbURL = "https://lootlogmfo-default-rtdb.europe-west1.firebasedatabase.app/";
     const chatURL = dbURL + "global_chat.json";
     const onlineURL = dbURL + "online_users"; 
     
-
+    // Pobieramy klucz z okna przeglądarki (ustawiony w panelu głównym)
+    const getSecret = () => window.MFO_SECRET || "BRAK_KLUCZA";
 
     let hasCalledForHelp = false;
 
@@ -134,7 +135,7 @@
                     nick: getMyNick(), 
                     msg: text, 
                     time: { ".sv": "timestamp" },
-                    app_secret: APP_SECRET // Wysyłamy klucz do weryfikacji
+                    app_secret: getSecret() // Pobieranie klucza z window.MFO_SECRET
                 })
             });
             fetchMessages();
@@ -170,7 +171,7 @@
                 method: 'PUT', 
                 body: JSON.stringify({ 
                     lastActive: { ".sv": "timestamp" },
-                    app_secret: APP_SECRET // Klucz dla obecności
+                    app_secret: getSecret() 
                 }) 
             }); 
         } catch (e) { }
