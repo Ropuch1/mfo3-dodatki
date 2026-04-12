@@ -84,7 +84,7 @@
 
     ui.innerHTML = `
         <div id="chat-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px; border-bottom:1px solid #e67e22; padding-bottom:4px; cursor:move;">
-            <b style="color:#e67e22; font-size:11px; pointer-events:none;">GLOBAL CHAT</b>
+            <b style="color:#e67e22; font-size:11px; pointer-events:none;">GLOBAL CHAT (SECURED)</b>
             <div style="display:flex; align-items:center;">
                 <span id="online-indicator" data-online-list="Ładowanie...">● Online</span>
                 <span id="toggle-chat" class="chat-btn">${settings.minimized ? '▢' : '_'}</span>
@@ -178,19 +178,36 @@
             const response = await fetch(`${chatURL}?orderBy="$key"&limitToLast=40`);
             const data = await response.json();
             if (!data) return;
-            container.innerHTML = "";
+            
+            container.innerHTML = ""; // Czyścimy kontener
+            
             Object.keys(data).forEach(id => {
                 const m = data[id];
                 const d = new Date(m.time);
                 const timeStr = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}:${String(d.getSeconds()).padStart(2, '0')}`;
 
                 const div = document.createElement('div');
-                div.style.cssText = "margin-bottom:6px; word-wrap:break-word; border-bottom:1px solid #1a1a1a; padding-bottom:3px;";
-                div.innerHTML = `
-                    <span class="chat-timestamp">[${timeStr}]</span>
-                    <b style="color:#f1c40f; font-size:11px;">${m.nick}:</b> 
-                    <span style="color:#eee; font-size:11px;">${m.msg}</span>
-                `;
+                div.style.cssText = "margin-bottom:6px; word-wrap:break-word; border-bottom:1px solid #1a1a1a; padding-bottom:3px; display: flex; align-items: baseline; flex-wrap: wrap;";
+                
+                // 1. Timestamp (bezpieczny tekst)
+                const timeSpan = document.createElement('span');
+                timeSpan.className = "chat-timestamp";
+                timeSpan.textContent = `[${timeStr}] `;
+                
+                // 2. Nick (bezpieczny tekst)
+                const nickB = document.createElement('b');
+                nickB.style.cssText = "color:#f1c40f; font-size:11px; margin-right: 5px;";
+                nickB.textContent = `${m.nick}:`;
+                
+                // 3. Wiadomość (KLUCZOWE: textContent zamiast innerHTML)
+                const msgSpan = document.createElement('span');
+                msgSpan.style.cssText = "color:#eee; font-size:11px;";
+                msgSpan.textContent = m.msg; // To blokuje ataki XSS <img src=x onerror=...>
+                
+                div.appendChild(timeSpan);
+                div.appendChild(nickB);
+                div.appendChild(msgSpan);
+                
                 container.appendChild(div);
             });
             container.scrollTop = container.scrollHeight;
