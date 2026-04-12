@@ -149,7 +149,7 @@
 
         if (isZajaczek && battleMenu.querySelectorAll('.BattleMenuCenter .items .item').length === 1 && !hasCalledForHelp) {
             hasCalledForHelp = true;
-            sendMessage("Pomocy! Biję Zajączka Wielkanocnego solo!");
+            sendMessage("Tępe chuje! Zajączek Wielkanocny!");
         }
     }
 
