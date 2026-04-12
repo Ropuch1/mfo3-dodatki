@@ -15,8 +15,7 @@
             color: #f0f0f0; padding: 8px; border: 2px solid #e67e22;
             border-radius: 8px; font-family: Arial, sans-serif;
             box-shadow: 0 0 15px #000; display: flex; flex-direction: column;
-            box-sizing: border-box; min-width: 220px;
-            bottom: 20px; right: 20px; /* Domyślna pozycja jeśli brak ustawień */
+            box-sizing: border-box; min-width: 240px;
             max-width: 95vw; max-height: 95vh;
             resize: both; overflow: hidden;
             user-select: none;
@@ -35,7 +34,7 @@
             user-select: text;
         }
         .chat-timestamp {
-            color: #777; font-size: 9px; margin-right: 5px; font-family: monospace;
+            color: #777; font-size: 10px; margin-right: 5px; font-family: 'Courier New', monospace;
         }
         #online-indicator {
             cursor: pointer; color: #2ecc71; font-size: 11px; 
@@ -70,11 +69,8 @@
     ui.id = "mfo3-chat-ui";
     if (settings.minimized) ui.classList.add('minimized');
 
-    const startLeft = Math.max(0, Math.min(settings.left, window.innerWidth - settings.width));
-    const startTop = Math.max(0, Math.min(settings.top, window.innerHeight - 40));
-
-    ui.style.top = startTop + "px";
-    ui.style.left = startLeft + "px";
+    ui.style.top = Math.max(0, Math.min(settings.top, window.innerHeight - 40)) + "px";
+    ui.style.left = Math.max(0, Math.min(settings.left, window.innerWidth - settings.width)) + "px";
     ui.style.width = settings.width + "px";
     ui.style.height = settings.minimized ? "auto" : settings.height + "px";
     document.body.appendChild(ui);
@@ -142,13 +138,11 @@
             hasCalledForHelp = false;
             return; 
         }
-
         const battleMenu = document.querySelector('.BattleMenu');
         if (!battleMenu || battleMenu.offsetParent === null || battleMenu.style.display === 'none') {
             hasCalledForHelp = false; 
             return;
         }
-
         const enemySection = battleMenu.querySelector('.BattleMenuLeft');
         const isZajaczek = enemySection && Array.from(enemySection.querySelectorAll('.item .name'))
                                      .some(el => el.innerText.includes("Zajączek Wielkanocny"));
@@ -186,9 +180,9 @@
             Object.keys(data).forEach(id => {
                 const m = data[id];
                 
-                // --- FORMATOWANIE CZASU ---
+                // --- FORMATOWANIE CZASU (Z SEKUNDAMI) ---
                 const date = new Date(m.time);
-                const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
                 const div = document.createElement('div');
                 div.style.cssText = "margin-bottom:6px; word-wrap:break-word; border-bottom:1px solid #1a1a1a; padding-bottom:3px;";
@@ -235,11 +229,6 @@
             document.body.style.userSelect = '';
             saveSettings(); 
         } 
-    });
-
-    window.addEventListener('resize', () => {
-        ui.style.left = Math.min(parseInt(ui.style.left), window.innerWidth - ui.offsetWidth) + 'px';
-        ui.style.top = Math.min(parseInt(ui.style.top), window.innerHeight - ui.offsetHeight) + 'px';
     });
 
     setInterval(fetchMessages, 3000);
