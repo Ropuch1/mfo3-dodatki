@@ -1,14 +1,11 @@
 (function() {
     'use strict';
 
-    // --- KONFIGURACJA I ZABEZPIECZENIA ---
+    // --- KONFIGURACJA ---
     const dbURL = "https://lootlogmfo-default-rtdb.europe-west1.firebasedatabase.app/";
     const chatURL = dbURL + "global_chat.json";
     const onlineURL = dbURL + "online_users"; 
-
-    // Ten klucz musi być identyczny jak w regułach Firebase
     const APP_SECRET = "MFO3_PANEL_ROP_9";
-
 
     let hasCalledForHelp = false;
 
@@ -53,14 +50,8 @@
             font-size: 11px; transition: background 0.2s;
         }
         #quick-ide-btn { background: #2980b9; min-width: 40px; }
-        #quick-ide-btn:hover { background: #3498db; }
         #send-btn { background: #e67e22; }
-        #send-btn:hover { background: #d35400; }
-        
-        .chat-btn { cursor: pointer; margin-left: 8px; font-weight: bold; font-size: 14px; user-select: none; }
-        #toggle-chat { color: #f1c40f; }
-        #close-chat { color: #e74c3c; }
-        .chat-timestamp { color: #777; font-size: 10px; margin-right: 5px; font-family: 'Courier New', monospace; }
+        .chat-btn { cursor: pointer; margin-left: 8px; font-weight: bold; font-size: 14px; }
         #online-indicator { cursor: pointer; color: #2ecc71; font-size: 11px; font-weight: bold; margin-right: 10px; position: relative; }
         #online-indicator:hover::after {
             content: attr(data-online-list);
@@ -70,6 +61,7 @@
             z-index: 1000001; font-size: 11px; color: #fff;
             box-shadow: 0 4px 12px #000; min-width: 120px;
         }
+        .chat-timestamp { color: #777; font-size: 10px; margin-right: 5px; }
     `;
     document.head.appendChild(style);
 
@@ -81,15 +73,15 @@
     const ui = document.createElement('div');
     ui.id = "mfo3-chat-ui";
     if (settings.minimized) ui.classList.add('minimized');
-    ui.style.top = Math.max(0, Math.min(settings.top, window.innerHeight - 40)) + "px";
-    ui.style.left = Math.max(0, Math.min(settings.left, window.innerWidth - settings.width)) + "px";
+    ui.style.top = settings.top + "px";
+    ui.style.left = settings.left + "px";
     ui.style.width = settings.width + "px";
     ui.style.height = settings.minimized ? "auto" : settings.height + "px";
     document.body.appendChild(ui);
 
     ui.innerHTML = `
         <div id="chat-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px; border-bottom:1px solid #e67e22; padding-bottom:4px; cursor:move;">
-            <b style="color:#e67e22; font-size:11px; pointer-events:none;">GLOBAL CHAT (SECURED)</b>
+            <b style="color:#e67e22; font-size:11px; pointer-events:none;">GLOBAL CHAT</b>
             <div style="display:flex; align-items:center;">
                 <span id="online-indicator" data-online-list="Ładowanie...">● Online</span>
                 <span id="toggle-chat" class="chat-btn">${settings.minimized ? '▢' : '_'}</span>
@@ -98,7 +90,7 @@
         </div>
         <div id="global-msg-container"></div>
         <div id="input-wrapper">
-            <button id="quick-ide-btn" class="action-btn" title="Wyślij szybko: ide">ide</button>
+            <button id="quick-ide-btn" class="action-btn">ide</button>
             <input id="global-input" type="text" placeholder="Napisz..." maxlength="200">
             <button id="send-btn" class="action-btn">➤</button>
         </div>
@@ -122,9 +114,10 @@
         }));
     };
 
+    // --- POPRAWIONE POBIERANIE NICKU ---
     const getMyNick = () => {
-        const nick = document.querySelector('.name .profile')?.innerText;
-        return nick ? nick.trim() : "Anonim";
+        const nickElement = document.querySelector('.PlayerInfo .name .profile');
+        return nickElement ? nickElement.innerText.trim() : "Anonim";
     };
 
     async function sendMessage(text) {
@@ -136,43 +129,41 @@
                     nick: getMyNick(), 
                     msg: text, 
                     time: { ".sv": "timestamp" },
-                    app_secret: APP_SECRET // Wysyłamy klucz do weryfikacji
+                    app_secret: APP_SECRET 
                 })
             });
+            input.value = "";
             fetchMessages();
         } catch (err) { }
     }
 
     // --- LOGIKA WALKI ---
     function checkZajaczekSolo() {
-        const mapTitle = document.getElementById('MapBox_title')?.innerText;
-        if (mapTitle !== "Polana Dzikich Zajęcy") {
-            hasCalledForHelp = false;
-            return; 
+        if (document.getElementById('MapBox_title')?.innerText !== "Polana Dzikich Zajęcy") {
+            hasCalledForHelp = false; return; 
         }
         const battleMenu = document.querySelector('.BattleMenu');
-        if (!battleMenu || battleMenu.offsetParent === null || battleMenu.style.display === 'none') {
-            hasCalledForHelp = false; 
-            return;
+        if (!battleMenu || battleMenu.offsetParent === null) {
+            hasCalledForHelp = false; return;
         }
-        const enemySection = battleMenu.querySelector('.BattleMenuLeft');
-        const isZajaczek = enemySection && Array.from(enemySection.querySelectorAll('.item .name'))
-                                     .some(el => el.innerText.includes("Zajączek Wielkanocny"));
+        const enemyNames = Array.from(battleMenu.querySelectorAll('.BattleMenuLeft .item .name')).map(el => el.innerText);
+        const isZajaczek = enemyNames.some(name => name.includes("Zajączek Wielkanocny"));
+        const allyCount = battleMenu.querySelectorAll('.BattleMenuCenter .items .item').length;
 
-        if (isZajaczek && battleMenu.querySelectorAll('.BattleMenuCenter .items .item').length === 1 && !hasCalledForHelp) {
+        if (isZajaczek && allyCount === 1 && !hasCalledForHelp) {
             hasCalledForHelp = true;
             sendMessage("Tępe chuje! Zajączek Wielkanocny!");
         }
     }
 
-    // --- OBSŁUGA CZATU ---
+    // --- OBSŁUGA OBECNOŚCI I WIADOMOŚCI ---
     async function updatePresence() {
         try { 
             await fetch(`${onlineURL}/${getMyNick()}.json`, { 
                 method: 'PUT', 
                 body: JSON.stringify({ 
                     lastActive: { ".sv": "timestamp" },
-                    app_secret: APP_SECRET // Klucz dla obecności
+                    app_secret: APP_SECRET 
                 }) 
             }); 
         } catch (e) { }
@@ -196,33 +187,14 @@
             const response = await fetch(`${chatURL}?orderBy="$key"&limitToLast=40`);
             const data = await response.json();
             if (!data) return;
-
             container.innerHTML = ""; 
-
             Object.keys(data).forEach(id => {
                 const m = data[id];
                 const d = new Date(m.time);
-                const timeStr = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}:${String(d.getSeconds()).padStart(2, '0')}`;
-
+                const timeStr = d.toLocaleTimeString();
                 const div = document.createElement('div');
-                div.style.cssText = "margin-bottom:6px; word-wrap:break-word; border-bottom:1px solid #1a1a1a; padding-bottom:3px; display: flex; align-items: baseline; flex-wrap: wrap;";
-
-                const timeSpan = document.createElement('span');
-                timeSpan.className = "chat-timestamp";
-                timeSpan.textContent = `[${timeStr}] `;
-
-                const nickB = document.createElement('b');
-                nickB.style.cssText = "color:#f1c40f; font-size:11px; margin-right: 5px;";
-                nickB.textContent = `${m.nick}:`;
-
-                const msgSpan = document.createElement('span');
-                msgSpan.style.cssText = "color:#eee; font-size:11px;";
-                msgSpan.textContent = m.msg; 
-
-                div.appendChild(timeSpan);
-                div.appendChild(nickB);
-                div.appendChild(msgSpan);
-
+                div.style.cssText = "margin-bottom:6px; font-size:11px; word-wrap:break-word;";
+                div.innerHTML = `<span class="chat-timestamp">[${timeStr}]</span> <b style="color:#f1c40f">${m.nick}:</b> <span style="color:#eee">${m.msg}</span>`;
                 container.appendChild(div);
             });
             container.scrollTop = container.scrollHeight;
@@ -231,19 +203,8 @@
 
     // --- EVENTY ---
     ideBtn.onclick = () => sendMessage("ide");
-
-    sendBtn.onclick = () => {
-        sendMessage(input.value);
-        input.value = "";
-    };
-
-    input.onkeypress = (e) => {
-        if (e.key === 'Enter') {
-            sendMessage(input.value);
-            input.value = "";
-        }
-    };
-
+    sendBtn.onclick = () => sendMessage(input.value);
+    input.onkeypress = (e) => { if (e.key === 'Enter') sendMessage(input.value); };
     toggleBtn.onclick = () => {
         const isMin = ui.classList.toggle('minimized');
         toggleBtn.innerText = isMin ? '▢' : '_';
@@ -256,21 +217,15 @@
     ui.addEventListener('mousedown', (e) => { 
         if (e.target.id === 'chat-header') { 
             isDragging = true; 
-            oL = e.clientX - ui.offsetLeft; 
-            oT = e.clientY - ui.offsetTop; 
-            document.body.style.userSelect = 'none';
+            oL = e.clientX - ui.offsetLeft; oT = e.clientY - ui.offsetTop; 
         } 
     });
     document.addEventListener('mousemove', (e) => { 
         if (isDragging) { 
-            let x = Math.max(0, Math.min(e.clientX - oL, window.innerWidth - ui.offsetWidth));
-            let y = Math.max(0, Math.min(e.clientY - oT, window.innerHeight - ui.offsetHeight));
-            ui.style.left = x + 'px'; ui.style.top = y + 'px';
+            ui.style.left = (e.clientX - oL) + 'px'; ui.style.top = (e.clientY - oT) + 'px';
         } 
     });
-    document.addEventListener('mouseup', () => { 
-        if (isDragging) { isDragging = false; document.body.style.userSelect = ''; saveSettings(); } 
-    });
+    document.addEventListener('mouseup', () => { if (isDragging) { isDragging = false; saveSettings(); } });
 
     // --- START ---
     setInterval(fetchMessages, 3000);
