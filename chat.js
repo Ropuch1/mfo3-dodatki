@@ -16,6 +16,7 @@
             border-radius: 8px; font-family: Arial, sans-serif;
             box-shadow: 0 0 15px #000; display: flex; flex-direction: column;
             box-sizing: border-box; min-width: 220px;
+            bottom: 20px; right: 20px; /* Domyślna pozycja jeśli brak ustawień */
             max-width: 95vw; max-height: 95vh;
             resize: both; overflow: hidden;
             user-select: none;
@@ -32,6 +33,9 @@
             padding: 8px; margin-bottom: 5px; font-size: 11px;
             border: 1px solid #333; scroll-behavior: smooth;
             user-select: text;
+        }
+        .chat-timestamp {
+            color: #777; font-size: 9px; margin-right: 5px; font-family: monospace;
         }
         #online-indicator {
             cursor: pointer; color: #2ecc71; font-size: 11px; 
@@ -131,7 +135,7 @@
         } catch (err) { }
     }
 
-    // --- LOGIKA WALKI (Zoptymalizowana pod mapę) ---
+    // --- LOGIKA WALKI ---
     function checkZajaczekSolo() {
         const mapTitle = document.getElementById('MapBox_title')?.innerText;
         if (mapTitle !== "Polana Dzikich Zajęcy") {
@@ -181,9 +185,18 @@
             container.innerHTML = "";
             Object.keys(data).forEach(id => {
                 const m = data[id];
+                
+                // --- FORMATOWANIE CZASU ---
+                const date = new Date(m.time);
+                const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
                 const div = document.createElement('div');
                 div.style.cssText = "margin-bottom:6px; word-wrap:break-word; border-bottom:1px solid #1a1a1a; padding-bottom:3px;";
-                div.innerHTML = `<b style="color:#f1c40f; font-size:11px;">${m.nick}:</b> <span style="color:#eee; font-size:11px;">${m.msg}</span>`;
+                div.innerHTML = `
+                    <span class="chat-timestamp">[${timeStr}]</span>
+                    <b style="color:#f1c40f; font-size:11px;">${m.nick}:</b> 
+                    <span style="color:#eee; font-size:11px;">${m.msg}</span>
+                `;
                 container.appendChild(div);
             });
             container.scrollTop = container.scrollHeight;
