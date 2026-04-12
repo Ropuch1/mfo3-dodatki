@@ -24,7 +24,7 @@
             height: auto !important; min-height: 0 !important; resize: none;
         }
         #mfo3-chat-ui.minimized #global-msg-container, 
-        #mfo3-chat-ui.minimized #global-input {
+        #mfo3-chat-ui.minimized #input-wrapper {
             display: none;
         }
         #global-msg-container {
@@ -48,12 +48,21 @@
             z-index: 1000001; font-size: 11px; color: #fff;
             box-shadow: 0 4px 12px #000; min-width: 120px;
         }
+        #input-wrapper {
+            display: flex; gap: 4px; width: 100%;
+        }
         #global-input {
-            width: 100%; background: #222; border: 1px solid #e67e22;
+            flex-grow: 1; background: #222; border: 1px solid #e67e22;
             color: white; padding: 6px; border-radius: 3px;
             outline: none; font-size: 12px; box-sizing: border-box;
             user-select: text;
         }
+        #send-btn {
+            background: #e67e22; border: none; color: white;
+            padding: 0 10px; border-radius: 3px; cursor: pointer;
+            font-weight: bold; font-size: 12px; transition: background 0.2s;
+        }
+        #send-btn:hover { background: #d35400; }
         .chat-btn { cursor: pointer; margin-left: 8px; font-weight: bold; font-size: 14px; user-select: none; }
         #toggle-chat { color: #f1c40f; }
         #close-chat { color: #e74c3c; }
@@ -85,11 +94,15 @@
             </div>
         </div>
         <div id="global-msg-container"></div>
-        <input id="global-input" type="text" placeholder="Napisz coś..." maxlength="200">
+        <div id="input-wrapper">
+            <input id="global-input" type="text" placeholder="Napisz coś..." maxlength="200">
+            <button id="send-btn">➤</button>
+        </div>
     `;
 
     const container = ui.querySelector('#global-msg-container');
     const input = ui.querySelector('#global-input');
+    const sendBtn = ui.querySelector('#send-btn');
     const onlineSign = ui.querySelector('#online-indicator');
     const toggleBtn = ui.querySelector('#toggle-chat');
 
@@ -122,6 +135,7 @@
     };
 
     async function sendMessage(text) {
+        if (!text.trim()) return;
         try {
             await fetch(chatURL, {
                 method: 'POST',
@@ -129,28 +143,6 @@
             });
             fetchMessages();
         } catch (err) { }
-    }
-
-    // --- LOGIKA WALKI ---
-    function checkZajaczekSolo() {
-        const mapTitle = document.getElementById('MapBox_title')?.innerText;
-        if (mapTitle !== "Polana Dzikich Zajęcy") {
-            hasCalledForHelp = false;
-            return; 
-        }
-        const battleMenu = document.querySelector('.BattleMenu');
-        if (!battleMenu || battleMenu.offsetParent === null || battleMenu.style.display === 'none') {
-            hasCalledForHelp = false; 
-            return;
-        }
-        const enemySection = battleMenu.querySelector('.BattleMenuLeft');
-        const isZajaczek = enemySection && Array.from(enemySection.querySelectorAll('.item .name'))
-                                     .some(el => el.innerText.includes("Zajączek Wielkanocny"));
-
-        if (isZajaczek && battleMenu.querySelectorAll('.BattleMenuCenter .items .item').length === 1 && !hasCalledForHelp) {
-            hasCalledForHelp = true;
-            sendMessage("Tępe chuje! Zajączek Wielkanocny!");
-        }
     }
 
     // --- CHAT LOGIC ---
@@ -179,8 +171,6 @@
             container.innerHTML = "";
             Object.keys(data).forEach(id => {
                 const m = data[id];
-                
-                // --- RĘCZNE FORMATOWANIE CZASU Z SEKUNDAMI ---
                 const d = new Date(m.time);
                 const h = String(d.getHours()).padStart(2, '0');
                 const i = String(d.getMinutes()).padStart(2, '0');
@@ -200,12 +190,18 @@
         } catch (err) { }
     }
 
-    input.onkeypress = (e) => {
-        if (e.key === 'Enter' && input.value.trim() !== "") {
+    const handleSend = () => {
+        if (input.value.trim() !== "") {
             sendMessage(input.value);
             input.value = "";
         }
     };
+
+    input.onkeypress = (e) => {
+        if (e.key === 'Enter') handleSend();
+    };
+
+    sendBtn.onclick = handleSend;
 
     // --- DRAG LOGIC ---
     let isDragging = false, oL, oT;
@@ -237,7 +233,6 @@
     setInterval(fetchMessages, 3000);
     setInterval(updatePresence, 15000);
     setInterval(fetchOnlineUsers, 7000);
-    setInterval(checkZajaczekSolo, 2000); 
     
     fetchMessages(); updatePresence(); fetchOnlineUsers();
     ui.querySelector('#close-chat').onclick = () => ui.remove();
