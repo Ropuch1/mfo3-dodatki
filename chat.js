@@ -1,9 +1,13 @@
 (function() {
     'use strict';
 
+    // --- KONFIGURACJA I ZABEZPIECZENIA ---
     const dbURL = "https://lootlogmfo-default-rtdb.europe-west1.firebasedatabase.app/";
     const chatURL = dbURL + "global_chat.json";
     const onlineURL = dbURL + "online_users"; 
+    
+    // Ten klucz musi być identyczny jak w regułach Firebase
+    const APP_SECRET = "MFO3_PANEL_ROP_99";
 
     let hasCalledForHelp = false;
 
@@ -127,7 +131,12 @@
         try {
             await fetch(chatURL, {
                 method: 'POST',
-                body: JSON.stringify({ nick: getMyNick(), msg: text, time: { ".sv": "timestamp" } })
+                body: JSON.stringify({ 
+                    nick: getMyNick(), 
+                    msg: text, 
+                    time: { ".sv": "timestamp" },
+                    app_secret: APP_SECRET // Wysyłamy klucz do weryfikacji
+                })
             });
             fetchMessages();
         } catch (err) { }
@@ -157,7 +166,15 @@
 
     // --- OBSŁUGA CZATU ---
     async function updatePresence() {
-        try { await fetch(`${onlineURL}/${getMyNick()}.json`, { method: 'PUT', body: JSON.stringify({ lastActive: { ".sv": "timestamp" } }) }); } catch (e) { }
+        try { 
+            await fetch(`${onlineURL}/${getMyNick()}.json`, { 
+                method: 'PUT', 
+                body: JSON.stringify({ 
+                    lastActive: { ".sv": "timestamp" },
+                    app_secret: APP_SECRET // Klucz dla obecności
+                }) 
+            }); 
+        } catch (e) { }
     }
 
     async function fetchOnlineUsers() {
@@ -179,7 +196,7 @@
             const data = await response.json();
             if (!data) return;
             
-            container.innerHTML = ""; // Czyścimy kontener
+            container.innerHTML = ""; 
             
             Object.keys(data).forEach(id => {
                 const m = data[id];
@@ -189,20 +206,17 @@
                 const div = document.createElement('div');
                 div.style.cssText = "margin-bottom:6px; word-wrap:break-word; border-bottom:1px solid #1a1a1a; padding-bottom:3px; display: flex; align-items: baseline; flex-wrap: wrap;";
                 
-                // 1. Timestamp (bezpieczny tekst)
                 const timeSpan = document.createElement('span');
                 timeSpan.className = "chat-timestamp";
                 timeSpan.textContent = `[${timeStr}] `;
                 
-                // 2. Nick (bezpieczny tekst)
                 const nickB = document.createElement('b');
                 nickB.style.cssText = "color:#f1c40f; font-size:11px; margin-right: 5px;";
                 nickB.textContent = `${m.nick}:`;
                 
-                // 3. Wiadomość (KLUCZOWE: textContent zamiast innerHTML)
                 const msgSpan = document.createElement('span');
                 msgSpan.style.cssText = "color:#eee; font-size:11px;";
-                msgSpan.textContent = m.msg; // To blokuje ataki XSS <img src=x onerror=...>
+                msgSpan.textContent = m.msg; 
                 
                 div.appendChild(timeSpan);
                 div.appendChild(nickB);
