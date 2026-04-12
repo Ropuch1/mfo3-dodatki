@@ -15,7 +15,7 @@
             color: #f0f0f0; padding: 8px; border: 2px solid #e67e22;
             border-radius: 8px; font-family: Arial, sans-serif;
             box-shadow: 0 0 15px #000; display: flex; flex-direction: column;
-            box-sizing: border-box; min-width: 240px;
+            box-sizing: border-box; min-width: 250px;
             max-width: 95vw; max-height: 95vh;
             resize: both; overflow: hidden;
             user-select: none;
@@ -180,9 +180,12 @@
             Object.keys(data).forEach(id => {
                 const m = data[id];
                 
-                // --- FORMATOWANIE CZASU (Z SEKUNDAMI) ---
-                const date = new Date(m.time);
-                const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                // --- RĘCZNE FORMATOWANIE CZASU Z SEKUNDAMI ---
+                const d = new Date(m.time);
+                const h = String(d.getHours()).padStart(2, '0');
+                const i = String(d.getMinutes()).padStart(2, '0');
+                const s = String(d.getSeconds()).padStart(2, '0');
+                const timeStr = `${h}:${i}:${s}`;
 
                 const div = document.createElement('div');
                 div.style.cssText = "margin-bottom:6px; word-wrap:break-word; border-bottom:1px solid #1a1a1a; padding-bottom:3px;";
