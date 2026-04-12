@@ -15,7 +15,7 @@
             color: #f0f0f0; padding: 8px; border: 2px solid #e67e22;
             border-radius: 8px; font-family: Arial, sans-serif;
             box-shadow: 0 0 15px #000; display: flex; flex-direction: column;
-            box-sizing: border-box; min-width: 250px;
+            box-sizing: border-box; min-width: 260px;
             max-width: 95vw; max-height: 95vh;
             resize: both; overflow: hidden;
             user-select: none;
@@ -33,13 +33,30 @@
             border: 1px solid #333; scroll-behavior: smooth;
             user-select: text;
         }
-        .chat-timestamp {
-            color: #777; font-size: 10px; margin-right: 5px; font-family: 'Courier New', monospace;
+        #input-wrapper {
+            display: flex; gap: 4px; width: 100%; align-items: stretch;
         }
-        #online-indicator {
-            cursor: pointer; color: #2ecc71; font-size: 11px; 
-            margin-right: 10px; font-weight: bold; position: relative;
+        #global-input {
+            flex-grow: 1; background: #222; border: 1px solid #e67e22;
+            color: white; padding: 6px; border-radius: 3px;
+            outline: none; font-size: 12px; box-sizing: border-box;
+            user-select: text;
         }
+        .action-btn {
+            border: none; color: white; padding: 0 8px;
+            border-radius: 3px; cursor: pointer; font-weight: bold;
+            font-size: 11px; transition: background 0.2s;
+        }
+        #quick-ide-btn { background: #2980b9; min-width: 40px; }
+        #quick-ide-btn:hover { background: #3498db; }
+        #send-btn { background: #e67e22; }
+        #send-btn:hover { background: #d35400; }
+        
+        .chat-btn { cursor: pointer; margin-left: 8px; font-weight: bold; font-size: 14px; user-select: none; }
+        #toggle-chat { color: #f1c40f; }
+        #close-chat { color: #e74c3c; }
+        .chat-timestamp { color: #777; font-size: 10px; margin-right: 5px; font-family: 'Courier New', monospace; }
+        #online-indicator { cursor: pointer; color: #2ecc71; font-size: 11px; font-weight: bold; margin-right: 10px; position: relative; }
         #online-indicator:hover::after {
             content: attr(data-online-list);
             position: absolute; right: 0; top: 22px;
@@ -48,24 +65,6 @@
             z-index: 1000001; font-size: 11px; color: #fff;
             box-shadow: 0 4px 12px #000; min-width: 120px;
         }
-        #input-wrapper {
-            display: flex; gap: 4px; width: 100%;
-        }
-        #global-input {
-            flex-grow: 1; background: #222; border: 1px solid #e67e22;
-            color: white; padding: 6px; border-radius: 3px;
-            outline: none; font-size: 12px; box-sizing: border-box;
-            user-select: text;
-        }
-        #send-btn {
-            background: #e67e22; border: none; color: white;
-            padding: 0 10px; border-radius: 3px; cursor: pointer;
-            font-weight: bold; font-size: 12px; transition: background 0.2s;
-        }
-        #send-btn:hover { background: #d35400; }
-        .chat-btn { cursor: pointer; margin-left: 8px; font-weight: bold; font-size: 14px; user-select: none; }
-        #toggle-chat { color: #f1c40f; }
-        #close-chat { color: #e74c3c; }
     `;
     document.head.appendChild(style);
 
@@ -77,7 +76,6 @@
     const ui = document.createElement('div');
     ui.id = "mfo3-chat-ui";
     if (settings.minimized) ui.classList.add('minimized');
-
     ui.style.top = Math.max(0, Math.min(settings.top, window.innerHeight - 40)) + "px";
     ui.style.left = Math.max(0, Math.min(settings.left, window.innerWidth - settings.width)) + "px";
     ui.style.width = settings.width + "px";
@@ -95,14 +93,16 @@
         </div>
         <div id="global-msg-container"></div>
         <div id="input-wrapper">
-            <input id="global-input" type="text" placeholder="Napisz coś..." maxlength="200">
-            <button id="send-btn">➤</button>
+            <button id="quick-ide-btn" class="action-btn" title="Wyślij szybko: ide">ide</button>
+            <input id="global-input" type="text" placeholder="Napisz..." maxlength="200">
+            <button id="send-btn" class="action-btn">➤</button>
         </div>
     `;
 
     const container = ui.querySelector('#global-msg-container');
     const input = ui.querySelector('#global-input');
     const sendBtn = ui.querySelector('#send-btn');
+    const ideBtn = ui.querySelector('#quick-ide-btn');
     const onlineSign = ui.querySelector('#online-indicator');
     const toggleBtn = ui.querySelector('#toggle-chat');
 
@@ -116,18 +116,6 @@
             minimized: isMin
         }));
     };
-
-    toggleBtn.onclick = () => {
-        const isMin = ui.classList.toggle('minimized');
-        toggleBtn.innerText = isMin ? '▢' : '_';
-        ui.style.height = isMin ? "auto" : settings.height + "px";
-        saveSettings();
-    };
-
-    const resizeObserver = new ResizeObserver(() => {
-        if (!ui.classList.contains('minimized')) saveSettings();
-    });
-    resizeObserver.observe(ui);
 
     const getMyNick = () => {
         const nick = document.querySelector('.name .profile')?.innerText;
@@ -145,7 +133,29 @@
         } catch (err) { }
     }
 
-    // --- CHAT LOGIC ---
+    // --- LOGIKA WALKI ---
+    function checkZajaczekSolo() {
+        const mapTitle = document.getElementById('MapBox_title')?.innerText;
+        if (mapTitle !== "Polana Dzikich Zajęcy") {
+            hasCalledForHelp = false;
+            return; 
+        }
+        const battleMenu = document.querySelector('.BattleMenu');
+        if (!battleMenu || battleMenu.offsetParent === null || battleMenu.style.display === 'none') {
+            hasCalledForHelp = false; 
+            return;
+        }
+        const enemySection = battleMenu.querySelector('.BattleMenuLeft');
+        const isZajaczek = enemySection && Array.from(enemySection.querySelectorAll('.item .name'))
+                                     .some(el => el.innerText.includes("Zajączek Wielkanocny"));
+
+        if (isZajaczek && battleMenu.querySelectorAll('.BattleMenuCenter .items .item').length === 1 && !hasCalledForHelp) {
+            hasCalledForHelp = true;
+            sendMessage("Tępe chuje! Zajączek Wielkanocny!");
+        }
+    }
+
+    // --- OBSŁUGA CZATU ---
     async function updatePresence() {
         try { await fetch(`${onlineURL}/${getMyNick()}.json`, { method: 'PUT', body: JSON.stringify({ lastActive: { ".sv": "timestamp" } }) }); } catch (e) { }
     }
@@ -172,10 +182,7 @@
             Object.keys(data).forEach(id => {
                 const m = data[id];
                 const d = new Date(m.time);
-                const h = String(d.getHours()).padStart(2, '0');
-                const i = String(d.getMinutes()).padStart(2, '0');
-                const s = String(d.getSeconds()).padStart(2, '0');
-                const timeStr = `${h}:${i}:${s}`;
+                const timeStr = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}:${String(d.getSeconds()).padStart(2, '0')}`;
 
                 const div = document.createElement('div');
                 div.style.cssText = "margin-bottom:6px; word-wrap:break-word; border-bottom:1px solid #1a1a1a; padding-bottom:3px;";
@@ -190,18 +197,27 @@
         } catch (err) { }
     }
 
-    const handleSend = () => {
-        if (input.value.trim() !== "") {
+    // --- EVENTY ---
+    ideBtn.onclick = () => sendMessage("ide");
+
+    sendBtn.onclick = () => {
+        sendMessage(input.value);
+        input.value = "";
+    };
+
+    input.onkeypress = (e) => {
+        if (e.key === 'Enter') {
             sendMessage(input.value);
             input.value = "";
         }
     };
 
-    input.onkeypress = (e) => {
-        if (e.key === 'Enter') handleSend();
+    toggleBtn.onclick = () => {
+        const isMin = ui.classList.toggle('minimized');
+        toggleBtn.innerText = isMin ? '▢' : '_';
+        ui.style.height = isMin ? "auto" : settings.height + "px";
+        saveSettings();
     };
-
-    sendBtn.onclick = handleSend;
 
     // --- DRAG LOGIC ---
     let isDragging = false, oL, oT;
@@ -213,7 +229,6 @@
             document.body.style.userSelect = 'none';
         } 
     });
-
     document.addEventListener('mousemove', (e) => { 
         if (isDragging) { 
             let x = Math.max(0, Math.min(e.clientX - oL, window.innerWidth - ui.offsetWidth));
@@ -221,18 +236,15 @@
             ui.style.left = x + 'px'; ui.style.top = y + 'px';
         } 
     });
-
     document.addEventListener('mouseup', () => { 
-        if (isDragging) { 
-            isDragging = false; 
-            document.body.style.userSelect = '';
-            saveSettings(); 
-        } 
+        if (isDragging) { isDragging = false; document.body.style.userSelect = ''; saveSettings(); } 
     });
 
+    // --- START ---
     setInterval(fetchMessages, 3000);
     setInterval(updatePresence, 15000);
     setInterval(fetchOnlineUsers, 7000);
+    setInterval(checkZajaczekSolo, 2000); 
     
     fetchMessages(); updatePresence(); fetchOnlineUsers();
     ui.querySelector('#close-chat').onclick = () => ui.remove();
