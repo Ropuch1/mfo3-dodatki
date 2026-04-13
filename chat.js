@@ -18,7 +18,7 @@
             border-radius: 8px; font-family: Arial, sans-serif;
             box-shadow: 0 0 15px #000; display: flex; flex-direction: column;
             box-sizing: border-box; min-width: 260px;
-            max-width: 95vw; max-height: 95vh;
+            max-width: 98vw; max-height: 98vh;
             resize: both; overflow: hidden;
             user-select: none;
         }
@@ -114,7 +114,18 @@
         }));
     };
 
-    // --- POPRAWIONE POBIERANIE NICKU ---
+    // --- FUNKCJA PILNUJĄCA KRAWĘDZI ---
+    const clampPosition = () => {
+        let rect = ui.getBoundingClientRect();
+        let top = parseInt(ui.style.top);
+        let left = parseInt(ui.style.left);
+
+        if (left < 0) ui.style.left = "0px";
+        if (top < 0) ui.style.top = "0px";
+        if (left + rect.width > window.innerWidth) ui.style.left = (window.innerWidth - rect.width) + "px";
+        if (top + rect.height > window.innerHeight) ui.style.top = (window.innerHeight - rect.height) + "px";
+    };
+
     const getMyNick = () => {
         const nickElement = document.querySelector('.PlayerInfo .name .profile');
         return nickElement ? nickElement.innerText.trim() : "Anonim";
@@ -137,7 +148,6 @@
         } catch (err) { }
     }
 
-    // --- LOGIKA WALKI ---
     function checkZajaczekSolo() {
         if (document.getElementById('MapBox_title')?.innerText !== "Polana Dzikich Zajęcy") {
             hasCalledForHelp = false; return; 
@@ -156,7 +166,6 @@
         }
     }
 
-    // --- OBSŁUGA OBECNOŚCI I WIADOMOŚCI ---
     async function updatePresence() {
         try { 
             await fetch(`${onlineURL}/${getMyNick()}.json`, { 
@@ -201,7 +210,6 @@
         } catch (err) { }
     }
 
-    // --- EVENTY ---
     ideBtn.onclick = () => sendMessage("ide");
     sendBtn.onclick = () => sendMessage(input.value);
     input.onkeypress = (e) => { if (e.key === 'Enter') sendMessage(input.value); };
@@ -210,9 +218,10 @@
         toggleBtn.innerText = isMin ? '▢' : '_';
         ui.style.height = isMin ? "auto" : settings.height + "px";
         saveSettings();
+        clampPosition();
     };
 
-    // --- DRAG LOGIC ---
+    // --- DRAG LOGIC Z CLAMPINGIEM ---
     let isDragging = false, oL, oT;
     ui.addEventListener('mousedown', (e) => { 
         if (e.target.id === 'chat-header') { 
@@ -222,12 +231,18 @@
     });
     document.addEventListener('mousemove', (e) => { 
         if (isDragging) { 
-            ui.style.left = (e.clientX - oL) + 'px'; ui.style.top = (e.clientY - oT) + 'px';
+            ui.style.left = (e.clientX - oL) + 'px'; 
+            ui.style.top = (e.clientY - oT) + 'px';
+            clampPosition();
         } 
     });
     document.addEventListener('mouseup', () => { if (isDragging) { isDragging = false; saveSettings(); } });
 
-    // --- START ---
+    // Nasłuchiwanie zmiany rozmiaru okna (resize)
+    new ResizeObserver(() => {
+        if (!ui.classList.contains('minimized')) clampPosition();
+    }).observe(ui);
+
     setInterval(fetchMessages, 3000);
     setInterval(updatePresence, 15000);
     setInterval(fetchOnlineUsers, 7000);
