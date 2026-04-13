@@ -8,6 +8,20 @@
     const APP_SECRET = "MFO3_PANEL_ROP_9";
 
     let hasCalledForHelp = false;
+    let isAFK = false;
+    let afkTimer;
+
+    // Funkcja resetująca licznik AFK
+    const resetAFK = () => {
+        isAFK = false;
+        clearTimeout(afkTimer);
+        afkTimer = setTimeout(() => { isAFK = true; }, 300000); // 5 minut bez ruchu = AFK
+    };
+
+    // Nasłuchiwanie aktywności użytkownika
+    window.addEventListener('mousemove', resetAFK);
+    window.addEventListener('keydown', resetAFK);
+    resetAFK();
 
     // --- DODAWANIE STYLI ---
     const style = document.createElement('style');
@@ -114,12 +128,10 @@
         }));
     };
 
-    // --- FUNKCJA PILNUJĄCA KRAWĘDZI ---
     const clampPosition = () => {
         let rect = ui.getBoundingClientRect();
         let top = parseInt(ui.style.top);
         let left = parseInt(ui.style.left);
-
         if (left < 0) ui.style.left = "0px";
         if (top < 0) ui.style.top = "0px";
         if (left + rect.width > window.innerWidth) ui.style.left = (window.innerWidth - rect.width) + "px";
@@ -149,6 +161,7 @@
     }
 
     function checkZajaczekSolo() {
+        if (document.hidden || isAFK) return; // Stop jeśli nieaktywny
         if (document.getElementById('MapBox_title')?.innerText !== "Polana Dzikich Zajęcy") {
             hasCalledForHelp = false; return; 
         }
@@ -167,6 +180,7 @@
     }
 
     async function updatePresence() {
+        if (document.hidden) return; // Nie marnuj transferu w tle
         try { 
             await fetch(`${onlineURL}/${getMyNick()}.json`, { 
                 method: 'PUT', 
@@ -179,19 +193,21 @@
     }
 
     async function fetchOnlineUsers() {
+        if (document.hidden || isAFK) return;
         try {
             const response = await fetch(`${onlineURL}.json`);
             const data = await response.json();
             if (!data) return;
             const now = Date.now();
-            let onlineList = Object.keys(data).filter(nick => now - data[nick].lastActive < 25000);
+            let onlineList = Object.keys(data).filter(nick => now - data[nick].lastActive < 45000);
             onlineSign.innerText = `● ${onlineList.length}`;
             onlineSign.setAttribute('data-online-list', "Gracze online:\n" + onlineList.join('\n'));
         } catch (e) { }
     }
 
     async function fetchMessages() {
-        if (ui.classList.contains('minimized')) return;
+        // Stop jeśli: karta w tle, użytkownik AFK lub okno zminimalizowane
+        if (document.hidden || isAFK || ui.classList.contains('minimized')) return;
         try {
             const response = await fetch(`${chatURL}?orderBy="$key"&limitToLast=40`);
             const data = await response.json();
@@ -218,10 +234,11 @@
         toggleBtn.innerText = isMin ? '▢' : '_';
         ui.style.height = isMin ? "auto" : settings.height + "px";
         saveSettings();
+        if (!isMin) fetchMessages(); // Odśwież po przywróceniu
         clampPosition();
     };
 
-    // --- DRAG LOGIC Z CLAMPINGIEM ---
+    // --- DRAG LOGIC ---
     let isDragging = false, oL, oT;
     ui.addEventListener('mousedown', (e) => { 
         if (e.target.id === 'chat-header') { 
@@ -238,15 +255,15 @@
     });
     document.addEventListener('mouseup', () => { if (isDragging) { isDragging = false; saveSettings(); } });
 
-    // Nasłuchiwanie zmiany rozmiaru okna (resize)
     new ResizeObserver(() => {
         if (!ui.classList.contains('minimized')) clampPosition();
     }).observe(ui);
 
-    setInterval(fetchMessages, 3000);
-    setInterval(updatePresence, 15000);
-    setInterval(fetchOnlineUsers, 7000);
-    setInterval(checkZajaczekSolo, 2000); 
+    // --- INTERWAŁY (Zoptymalizowane) ---
+    setInterval(fetchMessages, 4000);    // Czat co 4s
+    setInterval(updatePresence, 30000);  // Obecność co 30s
+    setInterval(fetchOnlineUsers, 10000); // Online lista co 10s
+    setInterval(checkZajaczekSolo, 3000); // Sprawdzanie zajaca co 3s
 
     fetchMessages(); updatePresence(); fetchOnlineUsers();
     ui.querySelector('#close-chat').onclick = () => ui.remove();
