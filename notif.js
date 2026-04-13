@@ -4,7 +4,8 @@
     const settings = JSON.parse(localStorage.getItem('mfo3_loot_settings')) || { 
         top: "100px", left: "10px", minimized: false,
         glowColor: "#ffd700", textColor: "#00ff00",
-        confettiEnabled: true // Nowe ustawienie
+        confettiEnabled: true,
+        soundUrl: "" // Nowe ustawienie
     };
     
     const saveSettings = () => localStorage.setItem('mfo3_loot_settings', JSON.stringify(settings));
@@ -21,10 +22,24 @@
     `;
     document.body.appendChild(display);
 
+    // --- FUNKCJA DŹWIĘKU (MAX 10 SEK) ---
+    const playLootSound = () => {
+        if (!settings.soundUrl || !settings.soundUrl.toLowerCase().endsWith('.mp4')) return;
+        
+        const audio = new Audio(settings.soundUrl);
+        audio.play().catch(e => console.warn("Nie udało się odtworzyć dźwięku (brak interakcji?)"));
+        
+        // Timer bezpieczeństwa - wyłącza po 10s
+        setTimeout(() => {
+            audio.pause();
+            audio.remove();
+        }, 10000);
+    };
+
     // --- DRAG LOGIC ---
     let isDragging = false, offsetX, offsetY;
     display.addEventListener('mousedown', (e) => {
-        if (e.target.tagName === 'INPUT' || e.target.classList.contains('ctrl-btn') || e.target.type === 'checkbox') return;
+        if (e.target.tagName === 'INPUT' || e.target.classList.contains('ctrl-btn')) return;
         isDragging = true;
         offsetX = e.clientX - display.getBoundingClientRect().left;
         offsetY = e.clientY - display.getBoundingClientRect().top;
@@ -40,7 +55,7 @@
 
     // --- EFEKTY ---
     const launchConfetti = () => {
-        if (!settings.confettiEnabled) return; // Blokada konfetti
+        if (!settings.confettiEnabled) return;
         for (let i = 0; i < 25; i++) {
             const c = document.createElement('div');
             c.innerText = ['🎉', '✨', '⭐', '💰'][Math.floor(Math.random() * 4)];
@@ -55,7 +70,7 @@
     };
 
     const showJackpotText = (name) => {
-        if (!settings.confettiEnabled) return; // Blokada napisu
+        if (!settings.confettiEnabled) return;
         const old = document.getElementById('mfo-jackpot-text');
         if (old) old.remove();
         const div = document.createElement('div');
@@ -81,18 +96,32 @@
                 </div>
             </div>
             <div id="loot-content-wrapper" style="display: ${settings.minimized ? 'none' : 'block'};">
-                <div style="font-size:11px; margin-bottom:8px;">
+                <div style="font-size:11px;">
                     <div style="margin-bottom:6px;">
                         <label style="cursor:pointer; display:flex; align-items:center; gap:5px; color:#2ecc71;">
-                            <input type="checkbox" id="c-confetti" ${settings.confettiEnabled ? 'checked' : ''}> Efekty (konfetti)
+                            <input type="checkbox" id="c-confetti" ${settings.confettiEnabled ? 'checked' : ''}> Konfeti & Napis
                         </label>
                     </div>
-                    <div style="margin-bottom:4px;">Ramka dropu: <input type="color" id="c-glow" value="${settings.glowColor}" style="width:30px; height:18px; border:none; background:none; cursor:pointer; vertical-align:middle;"></div>
-                    <div>Tekst dropu: <input type="color" id="c-text" value="${settings.textColor}" style="width:30px; height:18px; border:none; background:none; cursor:pointer; vertical-align:middle;"></div>
+                    <div style="margin-bottom:6px;">
+                        Link MP4 (10s):<br>
+                        <input type="text" id="c-sound" value="${settings.soundUrl}" placeholder="http://...plik.mp4" style="width:100%; background:#222; border:1px solid #e67e22; color:white; font-size:10px; margin-top:2px; padding:2px;">
+                    </div>
+                    <div style="margin-bottom:4px;">Ramka: <input type="color" id="c-glow" value="${settings.glowColor}" style="width:25px; height:15px; border:none; background:none; cursor:pointer; vertical-align:middle;"></div>
+                    <div>Tekst: <input type="color" id="c-text" value="${settings.textColor}" style="width:25px; height:15px; border:none; background:none; cursor:pointer; vertical-align:middle;"></div>
                 </div>
             </div>`;
 
         display.querySelector('#c-confetti').onchange = (e) => { settings.confettiEnabled = e.target.checked; saveSettings(); };
+        display.querySelector('#c-sound').onchange = (e) => { 
+            const val = e.target.value.trim();
+            if (val === "" || val.toLowerCase().endsWith('.mp4')) {
+                settings.soundUrl = val; 
+                saveSettings(); 
+            } else {
+                alert("Tylko format .mp4!");
+                e.target.value = settings.soundUrl;
+            }
+        };
         display.querySelector('#c-glow').oninput = (e) => { settings.glowColor = e.target.value; saveSettings(); };
         display.querySelector('#c-text').oninput = (e) => { settings.textColor = e.target.value; saveSettings(); };
         display.querySelector('#l-min').onclick = () => {
@@ -104,7 +133,6 @@
         display.querySelector('#l-close').onclick = () => display.remove();
     }
 
-    // --- SKANOWANIE ---
     function scan() {
         const results = document.querySelectorAll('.BattleResultsDialog');
         results.forEach(res => {
@@ -134,6 +162,7 @@
                 
                 launchConfetti(); 
                 showJackpotText(luckyItemsNames[0]);
+                playLootSound(); // Odpala dźwięk
 
                 const parent = res.closest('.WUI_Dialog') || res.closest('.LayoutBox2');
                 if (parent) {
