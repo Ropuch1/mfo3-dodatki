@@ -9,6 +9,7 @@
     { "id": "filtr", "name": "Wyszukiwarka EQ", "file": "filtr.js"},
     { "id": "jajka", "name": "Malowanie jajek", "file": "jajka.js"},
     { "id": "piorko", "name": "Piórko Garudy", "file": "piorko.js"},
-    { "id": "chat", "name": "LL", "file": "chat.js"}
+    { "id": "chat", "name": "LL", "file": "chat.js"},
+    { "id": "notif", "name": "sami se wymyslce nazwe na notyfikator", "file": "notif.js"}
   ]
 }
