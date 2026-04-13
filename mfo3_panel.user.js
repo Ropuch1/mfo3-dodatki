@@ -1,9 +1,7 @@
 // ==UserScript==
-// @name         MFO3 - Panel Ropucha 
-// @version      4.6
-// @description  Zamykanie/Otwieranie okienek po kliknięciu w nazwę + Pamięć stanu
-// @author       Ropuch
-// @match        *://*.mfo3.pl/game/*
+// @name         MFO3 - Panel Ropucha
+// @version      4.5
+// @match        https://s1.mfo3.pl/game/
 // @grant        GM_xmlhttpRequest
 // @connect      raw.githubusercontent.com
 // @run-at       document-end
@@ -21,7 +19,7 @@
                 try {
                     const config = JSON.parse(res.responseText);
                     render(config);
-                } catch(e) { console.error("Błąd configu panelu"); }
+                } catch(e) { console.error("Błąd configu"); }
             }
         });
     }
@@ -30,7 +28,7 @@
         const div = document.createElement('div');
         div.id = "ropuch-panel-main";
         
-        // Odczytujemy zapisaną pozycję i stan zwinięcia głównego panelu
+        // Odczytujemy zapisaną pozycję i stan zwinięcia
         const savedData = JSON.parse(localStorage.getItem('ropuch_panel_pos')) || { 
             top: "60px", 
             left: "auto", 
@@ -42,18 +40,17 @@
             position:fixed; top:${savedData.top}; left:${savedData.left}; right:${savedData.right}; 
             z-index:10000; background:rgba(45,34,23,0.95); color:#e6d3a7; 
             padding:12px; border:2px solid #7a5a3a; font-family:Verdana; 
-            font-size:11px; border-radius:8px; width:190px; box-shadow:0 0 15px black;
+            font-size:11px; border-radius:8px; width:180px; box-shadow:0 0 15px black;
             cursor: move; user-select: none;
         `;
         
         div.innerHTML = `
             <div id="panel-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px; border-bottom:1px solid #7a5a3a; padding-bottom:5px; cursor:move;">
                 <b style="color:#f1c40f; pointer-events:none;">DODATKI RZAPSONS</b>
-                <span id="ropuch-minimize" style="cursor:pointer; color:#f1c40f; font-weight:bold; font-size:14px; padding:0 5px;">${savedData.minimized ? '▢' : '_'}</span>
+                <span id="ropuch-minimize" style="cursor:pointer; color:#f1c40f; font-weight:bold; font-size:14px; padding:0 5px; user-select:none;">${savedData.minimized ? '▢' : '_'}</span>
             </div>
             <div id="mfo-mods-container" style="${savedData.minimized ? 'display:none;' : 'display:block;'}">
                 <div id="mfo-mods"></div>
-                <div style="font-size:9px; color:#8a7a5a; margin-top:8px; border-top:1px dotted #7a5a3a; padding-top:4px;">Kliknij w nazwę, by ukryć okno</div>
             </div>`;
             
         document.body.appendChild(div);
@@ -71,15 +68,21 @@
             localStorage.setItem('ropuch_panel_pos', JSON.stringify(pos));
         };
 
+        // --- FUNKCJA ZWIJANIA ---
         minBtn.onclick = (e) => {
-            e.stopPropagation();
+            e.stopPropagation(); // Ważne, żeby nie odpalić dragu
             const isCurrentlyVisible = modsContainer.style.display !== 'none';
-            modsContainer.style.display = isCurrentlyVisible ? 'none' : 'block';
-            minBtn.innerText = isCurrentlyVisible ? '▢' : '_';
-            savePos();
+            if (isCurrentlyVisible) {
+                modsContainer.style.display = 'none';
+                minBtn.innerText = '▢';
+            } else {
+                modsContainer.style.display = 'block';
+                minBtn.innerText = '_';
+            }
+            savePos(); // Zapisujemy stan zaraz po kliknięciu
         };
 
-        // --- DRAG & DROP ---
+        // --- FUNKCJA PRZESUWANIA (DRAG & DROP) ---
         let isDragging = false;
         let offsetX, offsetY;
 
@@ -94,51 +97,36 @@
             if (!isDragging) return;
             let x = e.clientX - offsetX;
             let y = e.clientY - offsetY;
+            
+            // Clamping
             x = Math.max(0, Math.min(x, window.innerWidth - div.offsetWidth));
             y = Math.max(0, Math.min(y, window.innerHeight - div.offsetHeight));
+
             div.style.left = x + 'px';
             div.style.top = y + 'px';
             div.style.right = 'auto';
         });
 
-        document.addEventListener('mouseup', () => { if (isDragging) { isDragging = false; savePos(); } });
+        document.addEventListener('mouseup', () => {
+            if (isDragging) {
+                isDragging = false;
+                savePos();
+            }
+        });
 
         // --- ŁADOWANIE MODUŁÓW ---
         config.modules.forEach(mod => {
-            const settingKey = 'mfo3_setting_' + mod.id;
-            const visibilityKey = 'mfo3_visible_' + mod.id;
-            const active = localStorage.getItem(settingKey) === 'true';
-            
-            const label = document.createElement('div');
+            const key = 'mfo3_setting_' + mod.id;
+            const active = localStorage.getItem(key) === 'true';
+            const label = document.createElement('label');
             label.style.cssText = "display:flex; align-items:center; margin-bottom:6px; cursor:pointer;";
-            label.innerHTML = `
-                <input type="checkbox" id="c-${mod.id}" ${active ? 'checked' : ''} style="margin-right:8px; cursor:pointer;">
-                <span class="mod-toggle-name" style="flex:1; transition:color 0.2s;">${mod.name}</span>
-            `;
+            label.innerHTML = `<input type="checkbox" id="c-${mod.id}" ${active ? 'checked' : ''} style="margin-right:8px;"> ${mod.name}`;
             document.getElementById('mfo-mods').appendChild(label);
 
-            const checkbox = label.querySelector('input');
-            const nameSpan = label.querySelector('.mod-toggle-name');
+            document.getElementById('c-' + mod.id).addEventListener('change', (e) => {
+                localStorage.setItem(key, e.target.checked);
+            });
 
-            // 1. Obsługa checkboxa (Włącz/Wyłącz całkowicie)
-            checkbox.onchange = (e) => {
-                localStorage.setItem(settingKey, e.target.checked);
-                location.reload(); 
-            };
-
-            // 2. Obsługa kliknięcia w nazwę (Ukryj/Pokaż okienko)
-            nameSpan.onclick = () => {
-                if (!active) return;
-                const targetModWindow = document.getElementById(mod.id);
-                if (targetModWindow) {
-                    const isHidden = targetModWindow.style.display === 'none';
-                    targetModWindow.style.display = isHidden ? 'block' : 'none';
-                    localStorage.setItem(visibilityKey, targetModWindow.style.display);
-                    nameSpan.style.color = isHidden ? '#e6d3a7' : '#8a7a5a'; // Przyciemnij nazwę jeśli okno ukryte
-                }
-            };
-
-            // 3. Pobieranie skryptu jeśli aktywny
             if (active) {
                 GM_xmlhttpRequest({
                     method: "GET",
@@ -148,20 +136,8 @@
                         script.textContent = r.responseText;
                         document.documentElement.appendChild(script);
                         script.remove();
-
-                        // Przywróć stan widoczności okienka po załadowaniu
-                        setTimeout(() => {
-                            const savedVis = localStorage.getItem(visibilityKey);
-                            const targetModWindow = document.getElementById(mod.id);
-                            if (targetModWindow && savedVis) {
-                                targetModWindow.style.display = savedVis;
-                                if (savedVis === 'none') nameSpan.style.color = '#8a7a5a';
-                            }
-                        }, 300);
                     }
                 });
-            } else {
-                nameSpan.style.color = '#555'; // Szary kolor dla wyłączonych
             }
         });
     }
