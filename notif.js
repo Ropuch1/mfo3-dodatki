@@ -3,7 +3,8 @@
 
     const settings = JSON.parse(localStorage.getItem('mfo3_loot_settings')) || { 
         top: "100px", left: "10px", minimized: false,
-        glowColor: "#ffd700", textColor: "#00ff00"
+        glowColor: "#ffd700", textColor: "#00ff00",
+        confettiEnabled: true // Nowe ustawienie
     };
     
     const saveSettings = () => localStorage.setItem('mfo3_loot_settings', JSON.stringify(settings));
@@ -23,7 +24,7 @@
     // --- DRAG LOGIC ---
     let isDragging = false, offsetX, offsetY;
     display.addEventListener('mousedown', (e) => {
-        if (e.target.tagName === 'INPUT' || e.target.classList.contains('ctrl-btn')) return;
+        if (e.target.tagName === 'INPUT' || e.target.classList.contains('ctrl-btn') || e.target.type === 'checkbox') return;
         isDragging = true;
         offsetX = e.clientX - display.getBoundingClientRect().left;
         offsetY = e.clientY - display.getBoundingClientRect().top;
@@ -39,6 +40,7 @@
 
     // --- EFEKTY ---
     const launchConfetti = () => {
+        if (!settings.confettiEnabled) return; // Blokada konfetti
         for (let i = 0; i < 25; i++) {
             const c = document.createElement('div');
             c.innerText = ['🎉', '✨', '⭐', '💰'][Math.floor(Math.random() * 4)];
@@ -53,6 +55,7 @@
     };
 
     const showJackpotText = (name) => {
+        if (!settings.confettiEnabled) return; // Blokada napisu
         const old = document.getElementById('mfo-jackpot-text');
         if (old) old.remove();
         const div = document.createElement('div');
@@ -79,10 +82,17 @@
             </div>
             <div id="loot-content-wrapper" style="display: ${settings.minimized ? 'none' : 'block'};">
                 <div style="font-size:11px; margin-bottom:8px;">
+                    <div style="margin-bottom:6px;">
+                        <label style="cursor:pointer; display:flex; align-items:center; gap:5px; color:#2ecc71;">
+                            <input type="checkbox" id="c-confetti" ${settings.confettiEnabled ? 'checked' : ''}> Efekty (konfetti)
+                        </label>
+                    </div>
                     <div style="margin-bottom:4px;">Ramka dropu: <input type="color" id="c-glow" value="${settings.glowColor}" style="width:30px; height:18px; border:none; background:none; cursor:pointer; vertical-align:middle;"></div>
                     <div>Tekst dropu: <input type="color" id="c-text" value="${settings.textColor}" style="width:30px; height:18px; border:none; background:none; cursor:pointer; vertical-align:middle;"></div>
                 </div>
             </div>`;
+
+        display.querySelector('#c-confetti').onchange = (e) => { settings.confettiEnabled = e.target.checked; saveSettings(); };
         display.querySelector('#c-glow').oninput = (e) => { settings.glowColor = e.target.value; saveSettings(); };
         display.querySelector('#c-text').oninput = (e) => { settings.textColor = e.target.value; saveSettings(); };
         display.querySelector('#l-min').onclick = () => {
@@ -98,7 +108,6 @@
     function scan() {
         const results = document.querySelectorAll('.BattleResultsDialog');
         results.forEach(res => {
-            // Sprawdzamy, czy to konkretne OKNO już było przez nas "obsłużone"
             if (res.getAttribute('data-notified-once') === 'true') return;
 
             const items = res.querySelectorAll('.WUI_CatalogItem');
@@ -109,29 +118,23 @@
                 const animEl = item.querySelector('.Animator');
                 const bgStyle = animEl?.style.background || "";
                 
-                // Logika karty lub wysokiego plusa
                 const isCard = bgStyle.includes('Misc.png') && bgStyle.includes('-24px');
                 const isHigh = nameEl?.innerText.match(/\+(\d+)/) && parseInt(nameEl.innerText.match(/\+(\d+)/)[1]) >= 5;
 
                 if (isCard || isHigh) {
                     luckyItemsNames.push(nameEl.innerText);
-                    
-                    // Kolorowanie tekstu od razu
                     nameEl.style.color = settings.textColor;
                     nameEl.style.fontWeight = "bold";
                     if (!nameEl.innerHTML.includes('★')) nameEl.innerHTML = "★ " + nameEl.innerHTML;
                 }
             });
 
-            // Jeśli znaleźliśmy coś fajnego w tym oknie
             if (luckyItemsNames.length > 0) {
-                // Oznaczamy okno jako "użyte", żeby nie spamiło konfeti co pół sekundy
                 res.setAttribute('data-notified-once', 'true');
                 
                 launchConfetti(); 
-                showJackpotText(luckyItemsNames[0]); // Pokazuje nazwę pierwszego dropu
+                showJackpotText(luckyItemsNames[0]);
 
-                // Glow dla okna
                 const parent = res.closest('.WUI_Dialog') || res.closest('.LayoutBox2');
                 if (parent) {
                     const target = parent.querySelector('.dialog-container') || parent;
