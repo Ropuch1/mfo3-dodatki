@@ -22,27 +22,18 @@
     `;
     document.body.appendChild(display);
 
-    // --- SZYBKI DŹWIĘK ---
-    let cachedAudio = null;
-    const preloadAudio = (url) => {
-        if (url && url.toLowerCase().endsWith('.mp3')) {
-            cachedAudio = new Audio(url);
-            cachedAudio.load();
-        }
-    };
-    preloadAudio(settings.soundUrl);
-
+    // --- LOGIKA DŹWIĘKU ---
     const playLootSound = () => {
         if (!settings.soundUrl) return;
-        const audio = new Audio(settings.soundUrl); // Nowa instancja dla nakładania się dźwięków
-        audio.play().catch(() => {});
+        const audio = new Audio(settings.soundUrl);
+        audio.play().catch(() => console.warn("Błąd odtwarzania - sprawdź link lub kliknij na grę."));
         setTimeout(() => { audio.pause(); audio.remove(); }, 10000);
     };
 
     // --- DRAG LOGIC ---
     let isDragging = false, offsetX, offsetY;
     display.addEventListener('mousedown', (e) => {
-        if (e.target.tagName === 'INPUT' || e.target.classList.contains('ctrl-btn')) return;
+        if (e.target.tagName === 'INPUT' || e.target.classList.contains('ctrl-btn') || e.target.id === 'test-sound') return;
         isDragging = true;
         offsetX = e.clientX - display.getBoundingClientRect().left;
         offsetY = e.clientY - display.getBoundingClientRect().top;
@@ -56,7 +47,7 @@
     });
     document.addEventListener('mouseup', () => { if (isDragging) { isDragging = false; saveSettings(); } });
 
-    // --- BŁYSKAWICZNE EFEKTY ---
+    // --- EFEKTY ---
     const launchConfetti = () => {
         if (!settings.confettiEnabled) return;
         for (let i = 0; i < 25; i++) {
@@ -67,7 +58,7 @@
             setTimeout(() => {
                 c.style.transform = `translate(${(Math.random()-0.5)*200}px, 110vh) rotate(${Math.random()*360}deg)`;
                 c.style.opacity = '0';
-            }, 20); // Szybszy start animacji
+            }, 20);
             setTimeout(() => c.remove(), 4000);
         }
     };
@@ -106,8 +97,11 @@
                         </label>
                     </div>
                     <div style="margin-bottom:6px;">
-                        Link MP3 (10s):<br>
-                        <input type="text" id="c-sound" value="${settings.soundUrl}" placeholder="http://..." style="width:100%; background:#222; border:1px solid #e67e22; color:white; font-size:10px; margin-top:2px; padding:2px;">
+                        Link MP3 (10s):
+                        <div style="display:flex; gap:3px; margin-top:2px;">
+                            <input type="text" id="c-sound" value="${settings.soundUrl}" placeholder="http://..." style="flex-grow:1; background:#222; border:1px solid #e67e22; color:white; font-size:10px; padding:2px;">
+                            <button id="test-sound" style="background:#e67e22; border:none; color:white; font-size:9px; cursor:pointer; padding:0 4px; border-radius:2px;">Testuj</button>
+                        </div>
                     </div>
                     <div style="margin-bottom:4px;">Ramka: <input type="color" id="c-glow" value="${settings.glowColor}" style="width:25px; height:15px; border:none; background:none; cursor:pointer; vertical-align:middle;"></div>
                     <div>Tekst: <input type="color" id="c-text" value="${settings.textColor}" style="width:25px; height:15px; border:none; background:none; cursor:pointer; vertical-align:middle;"></div>
@@ -115,11 +109,8 @@
             </div>`;
 
         display.querySelector('#c-confetti').onchange = (e) => { settings.confettiEnabled = e.target.checked; saveSettings(); };
-        display.querySelector('#c-sound').onchange = (e) => { 
-            settings.soundUrl = e.target.value.trim(); 
-            preloadAudio(settings.soundUrl);
-            saveSettings(); 
-        };
+        display.querySelector('#c-sound').onchange = (e) => { settings.soundUrl = e.target.value.trim(); saveSettings(); };
+        display.querySelector('#test-sound').onclick = () => playLootSound();
         display.querySelector('#c-glow').oninput = (e) => { settings.glowColor = e.target.value; saveSettings(); };
         display.querySelector('#c-text').oninput = (e) => { settings.textColor = e.target.value; saveSettings(); };
         display.querySelector('#l-min').onclick = () => {
@@ -131,11 +122,8 @@
         display.querySelector('#l-close').onclick = () => display.remove();
     }
 
-    // --- SKANOWANIE (TURBO: 100ms) ---
     function scan() {
         const results = document.querySelectorAll('.BattleResultsDialog');
-        if (results.length === 0) return;
-
         results.forEach(res => {
             if (res.getAttribute('data-notified-once') === 'true') return;
 
@@ -177,5 +165,5 @@
     }
 
     initUI();
-    setInterval(scan, 100); // 10 razy na sekundę zamiast 2
+    setInterval(scan, 100);
 })();
