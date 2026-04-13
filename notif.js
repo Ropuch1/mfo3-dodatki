@@ -5,7 +5,7 @@
         top: "100px", left: "10px", minimized: false,
         glowColor: "#ffd700", textColor: "#00ff00",
         confettiEnabled: true,
-        soundUrl: "" // Nowe ustawienie
+        soundUrl: "" 
     };
     
     const saveSettings = () => localStorage.setItem('mfo3_loot_settings', JSON.stringify(settings));
@@ -22,18 +22,21 @@
     `;
     document.body.appendChild(display);
 
-    // --- FUNKCJA DŹWIĘKU (MAX 10 SEK) ---
+    // --- SZYBKI DŹWIĘK ---
+    let cachedAudio = null;
+    const preloadAudio = (url) => {
+        if (url && url.toLowerCase().endsWith('.mp3')) {
+            cachedAudio = new Audio(url);
+            cachedAudio.load();
+        }
+    };
+    preloadAudio(settings.soundUrl);
+
     const playLootSound = () => {
-        if (!settings.soundUrl || !settings.soundUrl.toLowerCase().endsWith('.mp3')) return;
-        
-        const audio = new Audio(settings.soundUrl);
-        audio.play().catch(e => console.warn("Nie udało się odtworzyć dźwięku (brak interakcji?)"));
-        
-        // Timer bezpieczeństwa - wyłącza po 10s
-        setTimeout(() => {
-            audio.pause();
-            audio.remove();
-        }, 10000);
+        if (!settings.soundUrl) return;
+        const audio = new Audio(settings.soundUrl); // Nowa instancja dla nakładania się dźwięków
+        audio.play().catch(() => {});
+        setTimeout(() => { audio.pause(); audio.remove(); }, 10000);
     };
 
     // --- DRAG LOGIC ---
@@ -53,7 +56,7 @@
     });
     document.addEventListener('mouseup', () => { if (isDragging) { isDragging = false; saveSettings(); } });
 
-    // --- EFEKTY ---
+    // --- BŁYSKAWICZNE EFEKTY ---
     const launchConfetti = () => {
         if (!settings.confettiEnabled) return;
         for (let i = 0; i < 25; i++) {
@@ -64,7 +67,7 @@
             setTimeout(() => {
                 c.style.transform = `translate(${(Math.random()-0.5)*200}px, 110vh) rotate(${Math.random()*360}deg)`;
                 c.style.opacity = '0';
-            }, 50);
+            }, 20); // Szybszy start animacji
             setTimeout(() => c.remove(), 4000);
         }
     };
@@ -79,7 +82,7 @@
         div.style.cssText = `position:fixed; top:35%; left:50%; transform:translate(-50%, -50%); z-index: 10005; color:${settings.glowColor}; font-weight:bold; font-size:42px; text-align:center; text-shadow:0 0 20px #000, 0 0 10px ${settings.glowColor}; pointer-events:none; animation: mfoFade 4s forwards;`;
         if (!document.getElementById('mfo-anim-style')) {
             const s = document.createElement('style'); s.id = 'mfo-anim-style';
-            s.innerHTML = `@keyframes mfoFade { 0%{opacity:0; margin-top:-20px} 15%{opacity:1; margin-top:0} 85%{opacity:1} 100%{opacity:0; margin-top:-40px} }`;
+            s.innerHTML = `@keyframes mfoFade { 0%{opacity:0; margin-top:-20px} 10%{opacity:1; margin-top:0} 90%{opacity:1} 100%{opacity:0; margin-top:-40px} }`;
             document.head.appendChild(s);
         }
         document.body.appendChild(div);
@@ -99,12 +102,12 @@
                 <div style="font-size:11px;">
                     <div style="margin-bottom:6px;">
                         <label style="cursor:pointer; display:flex; align-items:center; gap:5px; color:#2ecc71;">
-                            <input type="checkbox" id="c-confetti" ${settings.confettiEnabled ? 'checked' : ''}> Konfeti & Napis
+                            <input type="checkbox" id="c-confetti" ${settings.confettiEnabled ? 'checked' : ''}> Efekty wizualne
                         </label>
                     </div>
                     <div style="margin-bottom:6px;">
                         Link MP3 (10s):<br>
-                        <input type="text" id="c-sound" value="${settings.soundUrl}" placeholder="http://...plik.mp3" style="width:100%; background:#222; border:1px solid #e67e22; color:white; font-size:10px; margin-top:2px; padding:2px;">
+                        <input type="text" id="c-sound" value="${settings.soundUrl}" placeholder="http://..." style="width:100%; background:#222; border:1px solid #e67e22; color:white; font-size:10px; margin-top:2px; padding:2px;">
                     </div>
                     <div style="margin-bottom:4px;">Ramka: <input type="color" id="c-glow" value="${settings.glowColor}" style="width:25px; height:15px; border:none; background:none; cursor:pointer; vertical-align:middle;"></div>
                     <div>Tekst: <input type="color" id="c-text" value="${settings.textColor}" style="width:25px; height:15px; border:none; background:none; cursor:pointer; vertical-align:middle;"></div>
@@ -113,14 +116,9 @@
 
         display.querySelector('#c-confetti').onchange = (e) => { settings.confettiEnabled = e.target.checked; saveSettings(); };
         display.querySelector('#c-sound').onchange = (e) => { 
-            const val = e.target.value.trim();
-            if (val === "" || val.toLowerCase().endsWith('.mp3')) {
-                settings.soundUrl = val; 
-                saveSettings(); 
-            } else {
-                alert("Tylko format .mp3!");
-                e.target.value = settings.soundUrl;
-            }
+            settings.soundUrl = e.target.value.trim(); 
+            preloadAudio(settings.soundUrl);
+            saveSettings(); 
         };
         display.querySelector('#c-glow').oninput = (e) => { settings.glowColor = e.target.value; saveSettings(); };
         display.querySelector('#c-text').oninput = (e) => { settings.textColor = e.target.value; saveSettings(); };
@@ -133,13 +131,17 @@
         display.querySelector('#l-close').onclick = () => display.remove();
     }
 
+    // --- SKANOWANIE (TURBO: 100ms) ---
     function scan() {
         const results = document.querySelectorAll('.BattleResultsDialog');
+        if (results.length === 0) return;
+
         results.forEach(res => {
             if (res.getAttribute('data-notified-once') === 'true') return;
 
             const items = res.querySelectorAll('.WUI_CatalogItem');
-            let luckyItemsNames = [];
+            let foundJackpot = false;
+            let firstName = "";
 
             items.forEach(item => {
                 const nameEl = item.querySelector('.name');
@@ -150,19 +152,19 @@
                 const isHigh = nameEl?.innerText.match(/\+(\d+)/) && parseInt(nameEl.innerText.match(/\+(\d+)/)[1]) >= 5;
 
                 if (isCard || isHigh) {
-                    luckyItemsNames.push(nameEl.innerText);
+                    if (!firstName) firstName = nameEl.innerText;
+                    foundJackpot = true;
                     nameEl.style.color = settings.textColor;
                     nameEl.style.fontWeight = "bold";
                     if (!nameEl.innerHTML.includes('★')) nameEl.innerHTML = "★ " + nameEl.innerHTML;
                 }
             });
 
-            if (luckyItemsNames.length > 0) {
+            if (foundJackpot) {
                 res.setAttribute('data-notified-once', 'true');
-                
+                playLootSound();
                 launchConfetti(); 
-                showJackpotText(luckyItemsNames[0]);
-                playLootSound(); // Odpala dźwięk
+                showJackpotText(firstName);
 
                 const parent = res.closest('.WUI_Dialog') || res.closest('.LayoutBox2');
                 if (parent) {
@@ -175,5 +177,5 @@
     }
 
     initUI();
-    setInterval(scan, 500);
+    setInterval(scan, 100); // 10 razy na sekundę zamiast 2
 })();
