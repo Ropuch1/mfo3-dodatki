@@ -6,7 +6,6 @@
         glowColor: "#ffd700", textColor: "#00ff00"
     };
     
-    const notifiedItems = new Set();
     const saveSettings = () => localStorage.setItem('mfo3_loot_settings', JSON.stringify(settings));
 
     const display = document.createElement('div');
@@ -21,6 +20,7 @@
     `;
     document.body.appendChild(display);
 
+    // --- DRAG LOGIC ---
     let isDragging = false, offsetX, offsetY;
     display.addEventListener('mousedown', (e) => {
         if (e.target.tagName === 'INPUT' || e.target.classList.contains('ctrl-btn')) return;
@@ -28,7 +28,6 @@
         offsetX = e.clientX - display.getBoundingClientRect().left;
         offsetY = e.clientY - display.getBoundingClientRect().top;
     });
-
     document.addEventListener('mousemove', (e) => {
         if (!isDragging) return;
         let x = Math.max(0, Math.min(e.clientX - offsetX, window.innerWidth - display.offsetWidth));
@@ -36,9 +35,9 @@
         settings.left = x + 'px'; settings.top = y + 'px';
         display.style.left = settings.left; display.style.top = settings.top;
     });
-
     document.addEventListener('mouseup', () => { if (isDragging) { isDragging = false; saveSettings(); } });
 
+    // --- EFEKTY ---
     const launchConfetti = () => {
         for (let i = 0; i < 25; i++) {
             const c = document.createElement('div');
@@ -95,38 +94,50 @@
         display.querySelector('#l-close').onclick = () => display.remove();
     }
 
+    // --- SKANOWANIE ---
     function scan() {
         const results = document.querySelectorAll('.BattleResultsDialog');
         results.forEach(res => {
-            const battleID = res.querySelector('input[value*="mfo3.pl/r/"]')?.value || res.querySelector('.dialog-header')?.innerText || "battle";
+            // Sprawdzamy, czy to konkretne OKNO już było przez nas "obsłużone"
+            if (res.getAttribute('data-notified-once') === 'true') return;
+
             const items = res.querySelectorAll('.WUI_CatalogItem');
-            let luckyWindow = false;
+            let luckyItemsNames = [];
+
             items.forEach(item => {
                 const nameEl = item.querySelector('.name');
                 const animEl = item.querySelector('.Animator');
                 const bgStyle = animEl?.style.background || "";
+                
+                // Logika karty lub wysokiego plusa
                 const isCard = bgStyle.includes('Misc.png') && bgStyle.includes('-24px');
                 const isHigh = nameEl?.innerText.match(/\+(\d+)/) && parseInt(nameEl.innerText.match(/\+(\d+)/)[1]) >= 5;
+
                 if (isCard || isHigh) {
-                    luckyWindow = true;
-                    const itemKey = battleID + "_" + nameEl.innerText;
-                    if (!notifiedItems.has(itemKey)) {
-                        notifiedItems.add(itemKey);
-                        launchConfetti(); 
-                        showJackpotText(nameEl.innerText);
-                    }
-                    if (nameEl) {
-                        nameEl.style.color = settings.textColor;
-                        nameEl.style.fontWeight = "bold";
-                        if (!nameEl.innerHTML.includes('★')) nameEl.innerHTML = "★ " + nameEl.innerHTML;
-                    }
+                    luckyItemsNames.push(nameEl.innerText);
+                    
+                    // Kolorowanie tekstu od razu
+                    nameEl.style.color = settings.textColor;
+                    nameEl.style.fontWeight = "bold";
+                    if (!nameEl.innerHTML.includes('★')) nameEl.innerHTML = "★ " + nameEl.innerHTML;
                 }
             });
-            const parent = res.closest('.WUI_Dialog') || res.closest('.LayoutBox2');
-            if (parent && luckyWindow) {
-                const target = parent.querySelector('.dialog-container') || parent;
-                target.style.boxShadow = `0 0 50px 20px ${settings.glowColor}b3`;
-                target.style.outline = `5px solid ${settings.glowColor}`;
+
+            // Jeśli znaleźliśmy coś fajnego w tym oknie
+            if (luckyItemsNames.length > 0) {
+                // Oznaczamy okno jako "użyte", żeby nie spamiło konfeti co pół sekundy
+                res.setAttribute('data-notified-once', 'true');
+                
+                launchConfetti(); 
+                showJackpotText(luckyItemsNames[0]); // Pokazuje nazwę pierwszego dropu
+
+                // Glow dla okna
+                const parent = res.closest('.WUI_Dialog') || res.closest('.LayoutBox2');
+                if (parent) {
+                    const target = parent.querySelector('.dialog-container') || parent;
+                    target.style.boxShadow = `0 0 50px 20px ${settings.glowColor}b3`;
+                    target.style.outline = `5px solid ${settings.glowColor}`;
+                }
             }
         });
     }
