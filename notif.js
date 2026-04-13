@@ -24,7 +24,7 @@
 
     // --- FUNKCJA DŹWIĘKU (MAX 10 SEK) ---
     const playLootSound = () => {
-        if (!settings.soundUrl || !settings.soundUrl.toLowerCase().endsWith('.mp4')) return;
+        if (!settings.soundUrl || !settings.soundUrl.toLowerCase().endsWith('.mp3')) return;
         
         const audio = new Audio(settings.soundUrl);
         audio.play().catch(e => console.warn("Nie udało się odtworzyć dźwięku (brak interakcji?)"));
@@ -103,8 +103,8 @@
                         </label>
                     </div>
                     <div style="margin-bottom:6px;">
-                        Link MP4 (10s):<br>
-                        <input type="text" id="c-sound" value="${settings.soundUrl}" placeholder="http://...plik.mp4" style="width:100%; background:#222; border:1px solid #e67e22; color:white; font-size:10px; margin-top:2px; padding:2px;">
+                        Link MP3 (10s):<br>
+                        <input type="text" id="c-sound" value="${settings.soundUrl}" placeholder="http://...plik.mp3" style="width:100%; background:#222; border:1px solid #e67e22; color:white; font-size:10px; margin-top:2px; padding:2px;">
                     </div>
                     <div style="margin-bottom:4px;">Ramka: <input type="color" id="c-glow" value="${settings.glowColor}" style="width:25px; height:15px; border:none; background:none; cursor:pointer; vertical-align:middle;"></div>
                     <div>Tekst: <input type="color" id="c-text" value="${settings.textColor}" style="width:25px; height:15px; border:none; background:none; cursor:pointer; vertical-align:middle;"></div>
@@ -114,11 +114,11 @@
         display.querySelector('#c-confetti').onchange = (e) => { settings.confettiEnabled = e.target.checked; saveSettings(); };
         display.querySelector('#c-sound').onchange = (e) => { 
             const val = e.target.value.trim();
-            if (val === "" || val.toLowerCase().endsWith('.mp4')) {
+            if (val === "" || val.toLowerCase().endsWith('.mp3')) {
                 settings.soundUrl = val; 
                 saveSettings(); 
             } else {
-                alert("Tylko format .mp4!");
+                alert("Tylko format .mp3!");
                 e.target.value = settings.soundUrl;
             }
         };
