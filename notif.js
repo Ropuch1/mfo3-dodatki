@@ -106,7 +106,7 @@
                 const animEl = item.querySelector('.Animator');
                 const bgStyle = animEl?.style.background || "";
                 const isCard = bgStyle.includes('Misc.png') && bgStyle.includes('-24px');
-                const isHigh = nameEl?.innerText.match(/\+(\d+)/) && parseInt(nameEl.innerText.match(/\+(\d+)/)[1]) > 5;
+                const isHigh = nameEl?.innerText.match(/\+(\d+)/) && parseInt(nameEl.innerText.match(/\+(\d+)/)[1]) >= 5;
                 if (isCard || isHigh) {
                     luckyWindow = true;
                     const itemKey = battleID + "_" + nameEl.innerText;
