@@ -2,12 +2,10 @@
   "modules": [
     { "id": "wasd", "name": "Sterowanie WASD", "file": "wasd.js" },
     { "id": "heal", "name": "Leczenie (T/R M1/M1 )", "file": "leczenie.js" },
-    { "id": "liczniki", "name": "Radar jajek", "file": "radarjajek.js" },
     { "id": "potwory", "name": "Potwory switch (V)", "file": "potwory.js"},
     { "id": "autof", "name": "Autof", "file": "autof.js"},
     { "id": "portal", "name": "Portale - Bossy", "file": "portal.js"},
     { "id": "filtr", "name": "Wyszukiwarka EQ", "file": "filtr.js"},
-    { "id": "jajka", "name": "Malowanie jajek", "file": "jajka.js"},
     { "id": "piorko", "name": "Piórko Garudy", "file": "piorko.js"},
     { "id": "chat", "name": "LL", "file": "chat.js"},
     { "id": "notif", "name": "sami se wymyslce nazwe na notyfikator", "file": "notif.js"}
