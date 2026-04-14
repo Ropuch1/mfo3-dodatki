@@ -160,24 +160,24 @@
         } catch (err) { }
     }
 
-    function checkZajaczekSolo() {
-        if (document.hidden || isAFK) return; // Stop jeśli nieaktywny
-        if (document.getElementById('MapBox_title')?.innerText !== "Polana Dzikich Zajęcy") {
-            hasCalledForHelp = false; return; 
-        }
-        const battleMenu = document.querySelector('.BattleMenu');
-        if (!battleMenu || battleMenu.offsetParent === null) {
-            hasCalledForHelp = false; return;
-        }
-        const enemyNames = Array.from(battleMenu.querySelectorAll('.BattleMenuLeft .item .name')).map(el => el.innerText);
-        const isZajaczek = enemyNames.some(name => name.includes("Zajączek Wielkanocny"));
-        const allyCount = battleMenu.querySelectorAll('.BattleMenuCenter .items .item').length;
+   // function checkZajaczekSolo() {
+ //       if (document.hidden || isAFK) return; // Stop jeśli nieaktywny
+ //       if (document.getElementById('MapBox_title')?.innerText !== "Polana Dzikich Zajęcy") {
+   //         hasCalledForHelp = false; return; 
+     //   }
+      //  const battleMenu = document.querySelector('.BattleMenu');
+       // if (!battleMenu || battleMenu.offsetParent === null) {
+        //    hasCalledForHelp = false; return;
+        //}
+       // const enemyNames = Array.from(battleMenu.querySelectorAll('.BattleMenuLeft .item .name')).map(el => el.innerText);
+        //const isZajaczek = enemyNames.some(name => name.includes("Zajączek Wielkanocny"));
+        //const allyCount = battleMenu.querySelectorAll('.BattleMenuCenter .items .item').length;
 
-        if (isZajaczek && allyCount === 1 && !hasCalledForHelp) {
-            hasCalledForHelp = true;
-            sendMessage("Tępe chuje! Zajączek Wielkanocny!");
-        }
-    }
+        //if (isZajaczek && allyCount === 1 && !hasCalledForHelp) {
+         //   hasCalledForHelp = true;
+           // sendMessage("Tępe chuje! Zajączek Wielkanocny!");
+        //}
+   // }
 
     async function updatePresence() {
         if (document.hidden) return; // Nie marnuj transferu w tle
@@ -263,7 +263,7 @@
     setInterval(fetchMessages, 4000);    // Czat co 4s
     setInterval(updatePresence, 30000);  // Obecność co 30s
     setInterval(fetchOnlineUsers, 10000); // Online lista co 10s
-    setInterval(checkZajaczekSolo, 3000); // Sprawdzanie zajaca co 3s
+    //setInterval(checkZajaczekSolo, 3000); // Sprawdzanie zajaca co 3s
 
     fetchMessages(); updatePresence(); fetchOnlineUsers();
     ui.querySelector('#close-chat').onclick = () => ui.remove();
