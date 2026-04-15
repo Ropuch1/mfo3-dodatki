@@ -259,6 +259,7 @@
         if (!isMin) fetchMessages();
     };
 
+    // --- POPRAWIONE PRZECIĄGANIE (LIMIT EKRANU) ---
     let isDragging = false, oL, oT;
     ui.addEventListener('mousedown', (e) => { 
         if (e.target.id === 'chat-header') { 
@@ -268,8 +269,15 @@
     });
     document.addEventListener('mousemove', (e) => { 
         if (isDragging) { 
-            ui.style.left = (e.clientX - oL) + 'px'; 
-            ui.style.top = (e.clientY - oT) + 'px';
+            let newL = e.clientX - oL;
+            let newT = e.clientY - oT;
+
+            // Limity
+            const maxL = window.innerWidth - ui.offsetWidth;
+            const maxT = window.innerHeight - ui.offsetHeight;
+
+            ui.style.left = Math.max(0, Math.min(newL, maxL)) + 'px'; 
+            ui.style.top = Math.max(0, Math.min(newT, maxT)) + 'px';
         } 
     });
     document.addEventListener('mouseup', () => { if (isDragging) { isDragging = false; saveSettings(); } });
