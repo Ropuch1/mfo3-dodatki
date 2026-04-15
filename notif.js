@@ -26,14 +26,14 @@
     const playLootSound = () => {
         if (!settings.soundUrl) return;
         const audio = new Audio(settings.soundUrl);
-        audio.play().catch(() => console.warn("Błąd odtwarzania - sprawdź link lub kliknij na grę."));
+        audio.play().catch(() => console.warn("Błąd odtwarzania dźwięku."));
         setTimeout(() => { audio.pause(); audio.remove(); }, 10000);
     };
 
     // --- DRAG LOGIC ---
     let isDragging = false, offsetX, offsetY;
     display.addEventListener('mousedown', (e) => {
-        if (e.target.tagName === 'INPUT' || e.target.classList.contains('ctrl-btn') || e.target.id === 'test-sound') return;
+        if (e.target.tagName === 'INPUT' || e.target.classList.contains('ctrl-btn') || e.target.tagName === 'BUTTON') return;
         isDragging = true;
         offsetX = e.clientX - display.getBoundingClientRect().left;
         offsetY = e.clientY - display.getBoundingClientRect().top;
@@ -50,10 +50,10 @@
     // --- EFEKTY ---
     const launchConfetti = () => {
         if (!settings.confettiEnabled) return;
-        for (let i = 0; i < 25; i++) {
+        for (let i = 0; i < 30; i++) {
             const c = document.createElement('div');
             c.innerText = ['🎉', '✨', '⭐', '💰'][Math.floor(Math.random() * 4)];
-            c.style.cssText = `position:fixed; left:${Math.random()*100}vw; top:-5vh; z-index:10001; font-size:25px; pointer-events:none; transition: transform ${Math.random()*2+2}s linear, opacity 2s;`;
+            c.style.cssText = `position:fixed; left:${Math.random()*100}vw; top:-5vh; z-index:20000; font-size:25px; pointer-events:none; transition: transform ${Math.random()*2+2}s linear, opacity 2s;`;
             document.body.appendChild(c);
             setTimeout(() => {
                 c.style.transform = `translate(${(Math.random()-0.5)*200}px, 110vh) rotate(${Math.random()*360}deg)`;
@@ -63,21 +63,34 @@
         }
     };
 
-    const showJackpotText = (name) => {
-        if (!settings.confettiEnabled) return;
+    const showJackpotText = (name, isRare = false) => {
         const old = document.getElementById('mfo-jackpot-text');
         if (old) old.remove();
+        
         const div = document.createElement('div');
         div.id = 'mfo-jackpot-text';
-        div.innerHTML = `<div style="font-size:16px; opacity:0.8;">JACKPOT!</div>${name}`;
-        div.style.cssText = `position:fixed; top:35%; left:50%; transform:translate(-50%, -50%); z-index: 10005; color:${settings.glowColor}; font-weight:bold; font-size:42px; text-align:center; text-shadow:0 0 20px #000, 0 0 10px ${settings.glowColor}; pointer-events:none; animation: mfoFade 4s forwards;`;
+        
+        if (isRare) {
+            // Rare Jackpot: Nie ma animacji znikania, ma przycisk X
+            div.innerHTML = `
+                <div style="position:absolute; right:10px; top:10px; cursor:pointer; font-size:24px; color:#fff;" onclick="this.parentElement.remove()">×</div>
+                <div style="font-size:22px; color:#fff; margin-bottom:15px; text-shadow: 0 0 10px #fff;">🍀 ULTRA RARE 🍀</div>
+                <div style="font-size:28px;">ZROB SCREENA I WSTAW NA DC TO COS DOSTANIESZ!</div>
+            `;
+            div.style.cssText = `position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); z-index: 10005; color:#00ffff; font-weight:bold; text-align:center; text-shadow:0 0 30px #000; background: rgba(0,0,0,0.9); padding: 40px; border-radius: 20px; border: 5px solid #00ffff; width: 70%; max-width: 700px; box-shadow: 0 0 100px rgba(0,255,255,0.5);`;
+        } else {
+            // Normalny Jackpot: Znika sam
+            div.innerHTML = `<div style="font-size:16px; opacity:0.8;">JACKPOT!</div>${name}`;
+            div.style.cssText = `position:fixed; top:35%; left:50%; transform:translate(-50%, -50%); z-index: 10005; color:${settings.glowColor}; font-weight:bold; font-size:42px; text-align:center; text-shadow:0 0 20px #000, 0 0 10px ${settings.glowColor}; pointer-events:none; animation: mfoFade 4s forwards;`;
+            setTimeout(() => { if(div.parentElement) div.remove(); }, 4100);
+        }
+
         if (!document.getElementById('mfo-anim-style')) {
             const s = document.createElement('style'); s.id = 'mfo-anim-style';
             s.innerHTML = `@keyframes mfoFade { 0%{opacity:0; margin-top:-20px} 10%{opacity:1; margin-top:0} 90%{opacity:1} 100%{opacity:0; margin-top:-40px} }`;
             document.head.appendChild(s);
         }
         document.body.appendChild(div);
-        setTimeout(() => div.remove(), 4100);
     };
 
     function initUI() {
@@ -97,10 +110,10 @@
                         </label>
                     </div>
                     <div style="margin-bottom:6px;">
-                        Link MP3 (10s):
+                        Link MP3:
                         <div style="display:flex; gap:3px; margin-top:2px;">
                             <input type="text" id="c-sound" value="${settings.soundUrl}" placeholder="http://..." style="flex-grow:1; background:#222; border:1px solid #e67e22; color:white; font-size:10px; padding:2px;">
-                            <button id="test-sound" style="background:#e67e22; border:none; color:white; font-size:9px; cursor:pointer; padding:0 4px; border-radius:2px;">Testuj</button>
+                            <button id="test-sound" style="background:#e67e22; border:none; color:white; font-size:9px; cursor:pointer; padding:0 4px; border-radius:2px;">Test</button>
                         </div>
                     </div>
                     <div style="margin-bottom:4px;">Ramka: <input type="color" id="c-glow" value="${settings.glowColor}" style="width:25px; height:15px; border:none; background:none; cursor:pointer; vertical-align:middle;"></div>
@@ -125,6 +138,16 @@
     function scan() {
         const results = document.querySelectorAll('.BattleResultsDialog');
         results.forEach(res => {
+            // Logika Rare Jackpot (1/1000)
+            if (!res.getAttribute('data-rare-notified')) {
+                res.setAttribute('data-rare-notified', 'true');
+                if (Math.random() < 0.001) {
+                    playLootSound();
+                    launchConfetti();
+                    showJackpotText("", true);
+                }
+            }
+
             if (res.getAttribute('data-notified-once') === 'true') return;
 
             const items = res.querySelectorAll('.WUI_CatalogItem');
@@ -165,5 +188,5 @@
     }
 
     initUI();
-    setInterval(scan, 100);
+    setInterval(scan, 200);
 })();
