@@ -8,7 +8,6 @@
     const APP_SECRET = "MFO3_PANEL_ROP_9";
     const ANN_MARKER = "\u200B"; 
 
-    let hasCalledForHelp = false;
     let isAFK = false;
     let afkTimer;
 
@@ -22,7 +21,7 @@
     window.addEventListener('keydown', resetAFK);
     resetAFK();
 
-    // --- DODAWANIE STYLI ---
+    // --- STYLE ---
     const style = document.createElement('style');
     style.innerHTML = `
         #mfo3-chat-ui {
@@ -49,6 +48,7 @@
             border-radius: 2px; line-height: 1.3;
             word-wrap: break-word;
         }
+        .pinned-time { color: rgba(255, 204, 0, 0.6); font-size: 9px; margin-right: 4px; }
 
         #global-msg-container {
             flex-grow: 1; overflow-y: auto; background: #000;
@@ -94,7 +94,6 @@
     `;
     document.head.appendChild(style);
 
-    // --- WCZYTYWANIE USTAWIEŃ ---
     const settings = JSON.parse(localStorage.getItem('mfo3_chat_v6')) || {
         top: 300, left: 10, width: 320, height: 250, minimized: false
     };
@@ -167,34 +166,16 @@
         } catch (err) { }
     }
 
-    // function checkZajaczekSolo() {
-    //    if (document.hidden || isAFK) return;
-    //    if (document.getElementById('MapBox_title')?.innerText !== "Polana Dzikich Zajęcy") {
-    //        hasCalledForHelp = false; return; 
-    //    }
-    //    const battleMenu = document.querySelector('.BattleMenu');
-    //    if (!battleMenu || battleMenu.offsetParent === null) {
-    //       hasCalledForHelp = false; return;
-    //    }
-    //    const enemyNames = Array.from(battleMenu.querySelectorAll('.BattleMenuLeft .item .name')).map(el => el.innerText);
-    //    const isZajaczek = enemyNames.some(name => name.includes("Zajączek Wielkanocny"));
-    //    const allyCount = battleMenu.querySelectorAll('.BattleMenuCenter .items .item').length;
-
-    //    if (isZajaczek && allyCount === 1 && !hasCalledForHelp) {
-    //        hasCalledForHelp = true;
-    //        sendMessage("Tępe chuje! Zajączek Wielkanocny!");
-    //    }
-    // }
-
     async function fetchMessages() {
         if (document.hidden || isAFK || ui.classList.contains('minimized')) return;
         try {
-            const response = await fetch(`${chatURL}?orderBy="$key"&limitToLast=40`);
+            const response = await fetch(`${chatURL}?orderBy="$key"&limitToLast=50`);
             const data = await response.json();
             if (!data) return;
             
             container.innerHTML = ""; 
             const announcements = {}; 
+            const now = Date.now();
 
             Object.keys(data).forEach(id => {
                 const m = data[id];
@@ -207,7 +188,10 @@
                 
                 if (isAnn) {
                     div.classList.add('msg-announcement');
-                    announcements[m.nick] = cleanMsg; 
+                    // Dodaj do przypiętych tylko jeśli wiadomość ma mniej niż 60 minut (3600000 ms)
+                    if (now - m.time < 3600000) {
+                        announcements[m.nick] = { msg: cleanMsg, time: d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) };
+                    }
                 }
 
                 div.innerHTML = `<span style="color:#777; font-size:10px;">[${d.toLocaleTimeString()}]</span> <b style="color:#f1c40f">${m.nick}:</b> <span style="color:#eee">${cleanMsg}</span>`;
@@ -221,7 +205,7 @@
                 keys.forEach(nick => {
                     const p = document.createElement('div');
                     p.className = 'pinned-msg';
-                    p.innerHTML = `📌 <b>${nick}:</b> ${announcements[nick]}`;
+                    p.innerHTML = `<span class="pinned-time">[${announcements[nick].time}]</span> 📌 <b>${nick}:</b> ${announcements[nick].msg}`;
                     pinnedContainer.appendChild(p);
                 });
             } else {
@@ -291,7 +275,6 @@
     setInterval(fetchMessages, 4000);
     setInterval(updatePresence, 30000);
     setInterval(fetchOnlineUsers, 10000);
-    // setInterval(checkZajaczekSolo, 3000);
 
     fetchMessages(); updatePresence(); fetchOnlineUsers();
     ui.querySelector('#close-chat').onclick = () => ui.remove();
