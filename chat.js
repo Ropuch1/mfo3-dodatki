@@ -8,13 +8,14 @@
     const APP_SECRET = "MFO3_PANEL_ROP_9";
     const ANN_MARKER = "\u200B"; 
 
+    let hasCalledForHelp = false;
     let isAFK = false;
     let afkTimer;
 
     const resetAFK = () => {
         isAFK = false;
         clearTimeout(afkTimer);
-        afkTimer = setTimeout(() => { isAFK = true; }, 300000); // 5 min
+        afkTimer = setTimeout(() => { isAFK = true; }, 300000);
     };
 
     window.addEventListener('mousemove', resetAFK);
@@ -33,7 +34,11 @@
             max-width: 98vw; max-height: 98vh;
             resize: both; overflow: hidden;
         }
-        #mfo3-chat-ui.minimized { height: auto !important; min-height: 0 !important; resize: none; }
+        #mfo3-chat-ui.minimized { 
+            height: 34px !important; 
+            min-height: 34px !important; 
+            resize: none !important; 
+        }
         
         #pinned-container {
             display: flex; flex-direction: column; gap: 4px;
@@ -104,11 +109,11 @@
     ui.style.top = settings.top + "px";
     ui.style.left = settings.left + "px";
     ui.style.width = settings.width + "px";
-    ui.style.height = settings.minimized ? "auto" : settings.height + "px";
+    if (!settings.minimized) ui.style.height = settings.height + "px";
     document.body.appendChild(ui);
 
     ui.innerHTML = `
-        <div id="chat-header" style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #e67e22; padding-bottom:4px; cursor:move; flex-shrink:0;">
+        <div id="chat-header" style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #e67e22; padding-bottom:4px; cursor:move; flex-shrink:0; height:18px;">
             <b style="color:#e67e22; font-size:11px; pointer-events:none;">GLOBAL CHAT</b>
             <div style="display:flex; align-items:center;">
                 <span id="online-indicator" data-online-list="Ładowanie...">● Online</span>
@@ -134,11 +139,12 @@
 
     const saveSettings = () => {
         const isMin = ui.classList.contains('minimized');
+        const oldData = JSON.parse(localStorage.getItem('mfo3_chat_v6')) || {};
         localStorage.setItem('mfo3_chat_v6', JSON.stringify({
             top: parseInt(ui.style.top),
             left: parseInt(ui.style.left),
             width: ui.offsetWidth,
-            height: isMin ? (JSON.parse(localStorage.getItem('mfo3_chat_v6'))?.height || 250) : ui.offsetHeight,
+            height: isMin ? (oldData.height || 250) : ui.offsetHeight,
             minimized: isMin
         }));
     };
@@ -166,6 +172,25 @@
         } catch (err) { }
     }
 
+    // function checkZajaczekSolo() {
+    //    if (document.hidden || isAFK) return;
+    //    if (document.getElementById('MapBox_title')?.innerText !== "Polana Dzikich Zajęcy") {
+    //        hasCalledForHelp = false; return; 
+    //    }
+    //    const battleMenu = document.querySelector('.BattleMenu');
+    //    if (!battleMenu || battleMenu.offsetParent === null) {
+    //       hasCalledForHelp = false; return;
+    //    }
+    //    const enemyNames = Array.from(battleMenu.querySelectorAll('.BattleMenuLeft .item .name')).map(el => el.innerText);
+    //    const isZajaczek = enemyNames.some(name => name.includes("Zajączek Wielkanocny"));
+    //    const allyCount = battleMenu.querySelectorAll('.BattleMenuCenter .items .item').length;
+
+    //    if (isZajaczek && allyCount === 1 && !hasCalledForHelp) {
+    //        hasCalledForHelp = true;
+    //        sendMessage("Tępe chuje! Zajączek Wielkanocny!");
+    //    }
+    // }
+
     async function fetchMessages() {
         if (document.hidden || isAFK || ui.classList.contains('minimized')) return;
         try {
@@ -188,7 +213,6 @@
                 
                 if (isAnn) {
                     div.classList.add('msg-announcement');
-                    // Dodaj do przypiętych tylko jeśli wiadomość ma mniej niż 60 minut (3600000 ms)
                     if (now - m.time < 3600000) {
                         announcements[m.nick] = { msg: cleanMsg, time: d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) };
                     }
@@ -224,7 +248,13 @@
     ui.querySelector('#toggle-chat').onclick = function() {
         const isMin = ui.classList.toggle('minimized');
         this.innerText = isMin ? '▢' : '_';
-        ui.style.height = isMin ? "auto" : (JSON.parse(localStorage.getItem('mfo3_chat_v6'))?.height || 250) + "px";
+        
+        if (isMin) {
+            ui.style.height = "34px";
+        } else {
+            const saved = JSON.parse(localStorage.getItem('mfo3_chat_v6'));
+            ui.style.height = (saved ? saved.height : 250) + "px";
+        }
         saveSettings();
         if (!isMin) fetchMessages();
     };
@@ -244,7 +274,9 @@
     });
     document.addEventListener('mouseup', () => { if (isDragging) { isDragging = false; saveSettings(); } });
 
-    new ResizeObserver(() => { if (!ui.classList.contains('minimized')) saveSettings(); }).observe(ui);
+    new ResizeObserver(() => { 
+        if (!ui.classList.contains('minimized')) saveSettings(); 
+    }).observe(ui);
 
     async function updatePresence() {
         if (document.hidden) return;
@@ -275,6 +307,7 @@
     setInterval(fetchMessages, 4000);
     setInterval(updatePresence, 30000);
     setInterval(fetchOnlineUsers, 10000);
+    // setInterval(checkZajaczekSolo, 3000);
 
     fetchMessages(); updatePresence(); fetchOnlineUsers();
     ui.querySelector('#close-chat').onclick = () => ui.remove();
