@@ -5,7 +5,7 @@
     const dbURL = "https://lootlogmfo-default-rtdb.europe-west1.firebasedatabase.app/";
     const chatURL = dbURL + "global_chat.json";
     const pinnedURL = dbURL + "pinned_msg.json";
-    const onlineURL = dbURL + "online_users"; // Bez .json tutaj, dodamy w fetchu
+    const onlineURL = dbURL + "online_users"; 
     const APP_SECRET = "MFO3_PANEL_ROP_9";
 
     let isAFK = false;
@@ -20,27 +20,47 @@
     window.addEventListener('keydown', resetAFK);
     resetAFK();
 
-    // --- STYLE ---
+    // --- STYLE (Poprawione dla widoczności przycisków) ---
     const style = document.createElement('style');
     style.innerHTML = `
         #mfo3-chat-ui {
             position: fixed; bottom: 10px; right: 10px; z-index: 999999;
-            background: rgba(20, 20, 20, 0.95); color: #f0f0f0; padding: 10px;
-            border: 2px solid #e67e22; border-radius: 8px; font-family: Arial;
-            width: 300px; display: flex; flex-direction: column; box-shadow: 0 0 15px #000;
+            background: rgba(20, 20, 20, 0.98); color: #f0f0f0; padding: 10px;
+            border: 2px solid #e67e22; border-radius: 8px; font-family: Arial, sans-serif;
+            width: 320px; display: flex; flex-direction: column; box-shadow: 0 0 15px #000;
+            box-sizing: border-box;
         }
         #chat-header { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 11px; font-weight: bold; color: #e67e22; border-bottom: 1px solid #444; padding-bottom: 3px; }
         #online-indicator { color: #2ecc71; cursor: pointer; }
         #pinned-msg {
-            background: rgba(241, 196, 15, 0.2); border: 1px solid #f1c40f;
-            padding: 5px; margin-bottom: 5px; font-size: 11px; display: none; border-radius: 4px;
+            background: rgba(241, 196, 15, 0.15); border: 1px solid #f1c40f;
+            padding: 6px; margin-bottom: 8px; font-size: 11px; display: none; border-radius: 4px;
+            word-wrap: break-word;
         }
-        #global-msg-container { height: 180px; overflow-y: auto; background: #000; padding: 5px; font-size: 11px; border: 1px solid #333; }
-        #input-wrapper { display: flex; gap: 3px; margin-top: 5px; }
-        #global-input { flex-grow: 1; background: #222; color: #fff; border: 1px solid #e67e22; padding: 4px; border-radius: 3px; font-size: 11px; }
-        .btn { background: #e67e22; border: none; color: white; cursor: pointer; padding: 4px 8px; font-size: 11px; border-radius: 3px; }
-        #pin-btn { background: #f1c40f; color: #000; font-weight: bold; }
-        .msg-line { margin-bottom: 4px; word-wrap: break-word; }
+        #global-msg-container { 
+            height: 180px; overflow-y: auto; background: #000; padding: 5px; 
+            font-size: 11px; border: 1px solid #333; border-radius: 4px;
+        }
+        #input-wrapper { 
+            display: flex; 
+            gap: 4px; 
+            margin-top: 8px; 
+            width: 100%;
+            align-items: center;
+        }
+        #global-input { 
+            flex: 1; /* Zajmuje dostępną przestrzeń */
+            min-width: 0; /* Kluczowe: pozwala elementowi flex się kurczyć */
+            background: #111; color: #fff; border: 1px solid #e67e22; 
+            padding: 6px; border-radius: 3px; font-size: 12px; 
+        }
+        .btn { 
+            flex-shrink: 0; /* Przycisk nigdy się nie schowa/nie skurczy */
+            background: #e67e22; border: none; color: white; cursor: pointer; 
+            padding: 6px 10px; font-size: 12px; border-radius: 3px; font-weight: bold;
+        }
+        #pin-btn { background: #f1c40f; color: #000; }
+        .msg-line { margin-bottom: 4px; word-wrap: break-word; line-height: 1.3; }
     `;
     document.head.appendChild(style);
 
@@ -48,14 +68,14 @@
     ui.id = "mfo3-chat-ui";
     ui.innerHTML = `
         <div id="chat-header">
-            <span>MFO3 GLOBAL CHAT</span>
-            <span id="online-indicator" title="">● Online: ?</span>
+            <span>MFO3 GLOBAL</span>
+            <span id="online-indicator">● Online: ?</span>
         </div>
         <div id="pinned-msg"></div>
         <div id="global-msg-container"></div>
         <div id="input-wrapper">
-            <input id="global-input" type="text" placeholder="Napisz..." maxlength="200">
-            <button id="pin-btn" class="btn" title="Wyróżnij na górze">★</button>
+            <input id="global-input" type="text" placeholder="Napisz..." maxlength="180">
+            <button id="pin-btn" class="btn" title="Wyróżnij">★</button>
             <button id="send-btn" class="btn">➤</button>
         </div>
     `;
@@ -71,7 +91,7 @@
         return n ? n.innerText.trim() : "Gracz";
     };
 
-    // --- SYSTEM ONLINE ---
+    // --- FUNKCJE ONLINE ---
     async function updatePresence() {
         if (document.hidden) return;
         try {
@@ -91,11 +111,11 @@
             const now = Date.now();
             const onlineList = Object.keys(data).filter(nick => now - data[nick].lastActive < 45000);
             onlineSign.innerText = `● Online: ${onlineList.length}`;
-            onlineSign.title = "Gracze online:\n" + onlineList.join('\n');
+            onlineSign.title = "Lista: " + onlineList.join(', ');
         } catch (e) {}
     }
 
-    // --- CZAT I PIN ---
+    // --- CZAT I WYRÓŻNIENIA ---
     async function performSend(isPinned = false) {
         const text = input.value.trim();
         if (!text) return;
@@ -103,7 +123,7 @@
         const method = isPinned ? 'PUT' : 'POST';
         
         try {
-            await fetch(url, {
+            const res = await fetch(url, {
                 method: method,
                 body: JSON.stringify({
                     nick: getNick(),
@@ -111,9 +131,11 @@
                     time: { ".sv": "timestamp" }
                 })
             });
-            input.value = "";
-            isPinned ? fetchPinned() : fetchMessages();
-        } catch (e) { console.error("Błąd wysyłki:", e); }
+            if(res.ok) {
+                input.value = "";
+                isPinned ? fetchPinned() : fetchMessages();
+            }
+        } catch (e) { console.error("Błąd:", e); }
     }
 
     async function fetchMessages() {
@@ -146,17 +168,16 @@
         } catch (e) {}
     }
 
-    // --- OBSŁUGA ---
+    // --- EVENTY ---
     ui.querySelector('#send-btn').onclick = () => performSend(false);
     ui.querySelector('#pin-btn').onclick = () => performSend(true);
     input.onkeypress = (e) => { if (e.key === 'Enter') performSend(false); };
 
-    // --- INTERWAŁY ---
-    setInterval(fetchMessages, 4000);   // Odśwież czat
-    setInterval(fetchPinned, 10000);    // Odśwież PIN
-    setInterval(updatePresence, 30000); // Wyślij info "jestem online"
-    setInterval(fetchOnlineUsers, 10000); // Pobierz listę online
+    // --- PĘTLE ---
+    setInterval(fetchMessages, 4000);
+    setInterval(fetchPinned, 10000);
+    setInterval(updatePresence, 30000);
+    setInterval(fetchOnlineUsers, 12000);
 
-    // Start
     fetchMessages(); fetchPinned(); updatePresence(); fetchOnlineUsers();
 })();
