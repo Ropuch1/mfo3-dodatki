@@ -72,6 +72,7 @@
             font-size: 11px;
         }
         #quick-ide-btn { background: #2980b9; }
+        #hydraulik-btn { background: #5d4037; }
         #announcement-btn { background: #c0392b; }
         #send-btn { background: #e67e22; }
         
@@ -125,6 +126,7 @@
         <div id="global-msg-container"></div>
         <div id="input-wrapper">
             <button id="quick-ide-btn" class="action-btn">ide</button>
+            <button id="hydraulik-btn" class="action-btn">hydraulik</button>
             <button id="announcement-btn" class="action-btn">📢</button>
             <input id="global-input" type="text" placeholder="Napisz..." maxlength="200">
             <button id="send-btn" class="action-btn">➤</button>
@@ -241,6 +243,7 @@
     }
 
     ui.querySelector('#quick-ide-btn').onclick = () => sendMessage("ide");
+    ui.querySelector('#hydraulik-btn').onclick = () => sendMessage("ile jeszcze tego gówna");
     ui.querySelector('#announcement-btn').onclick = () => { if(input.value.trim()) sendMessage(input.value, true); };
     sendBtn.onclick = () => sendMessage(input.value);
     input.onkeypress = (e) => { if (e.key === 'Enter') sendMessage(input.value); };
@@ -259,7 +262,6 @@
         if (!isMin) fetchMessages();
     };
 
-    // --- POPRAWIONE PRZECIĄGANIE (LIMIT EKRANU) ---
     let isDragging = false, oL, oT;
     ui.addEventListener('mousedown', (e) => { 
         if (e.target.id === 'chat-header') { 
@@ -272,7 +274,6 @@
             let newL = e.clientX - oL;
             let newT = e.clientY - oT;
 
-            // Limity
             const maxL = window.innerWidth - ui.offsetWidth;
             const maxT = window.innerHeight - ui.offsetHeight;
 
