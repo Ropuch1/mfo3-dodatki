@@ -8,6 +8,6 @@
     { "id": "filtr", "name": "Wyszukiwarka EQ", "file": "filtr.js"},
     { "id": "piorko", "name": "Piórko Garudy", "file": "piorko.js"},
     { "id": "chat", "name": "LL", "file": "chat.js"},
-    { "id": "notif", "name": "sami se wymyslce nazwe na notyfikator", "file": "notif.js"}
+    { "id": "notif", "name": "Notyfikator", "file": "notif.js"}
   ]
 }
