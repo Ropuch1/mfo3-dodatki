@@ -141,7 +141,7 @@
             // Logika Rare Jackpot (1/1000)
             if (!res.getAttribute('data-rare-notified')) {
                 res.setAttribute('data-rare-notified', 'true');
-                if (Math.random() < 0.001) {
+                if (Math.random() < 0.0001) {
                     playLootSound();
                     launchConfetti();
                     showJackpotText("", true);
