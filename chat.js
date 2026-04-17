@@ -243,7 +243,7 @@
     }
 
     ui.querySelector('#quick-ide-btn').onclick = () => sendMessage("ide");
-    ui.querySelector('#hydraulik-btn').onclick = () => sendMessage("ile jeszcze tego gówna");
+    ui.querySelector('#hydraulik-btn').onclick = () => sendMessage("ile jeszcze tego gnoju");
     ui.querySelector('#announcement-btn').onclick = () => { if(input.value.trim()) sendMessage(input.value, true); };
     sendBtn.onclick = () => sendMessage(input.value);
     input.onkeypress = (e) => { if (e.key === 'Enter') sendMessage(input.value); };
