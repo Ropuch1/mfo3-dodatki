@@ -112,7 +112,7 @@
         panel.style = "position: fixed; top: 100px; right: 20px; background: rgba(10, 10, 10, 0.98); color: #fff; border: 1px solid #ffd700; border-radius: 4px; z-index: 999999; font-family: Verdana, sans-serif; font-size: 11px; box-shadow: 0 0 20px rgba(0,0,0,0.8); user-select: none;";
         const header = document.createElement('div');
         header.style = "background: #ffd700; color: #000; padding: 5px 10px; font-weight: bold; cursor: move; display: flex; justify-content: space-between; align-items: center; border-radius: 3px 3px 0 0;";
-        header.innerHTML = `<span>GEM STATUS</span> <span id="gem-js-min-btn" style="cursor: pointer; padding: 0 6px; background: #000; color: #ffd700; border-radius: 2px; font-size: 10px;">_</span>`;
+        header.innerHTML = `<span>GEMY</span> <span id="gem-js-min-btn" style="cursor: pointer; padding: 0 6px; background: #000; color: #ffd700; border-radius: 2px; font-size: 10px;">_</span>`;
         const content = document.createElement('div');
         content.id = 'gem-js-content';
         content.style = "padding: 10px; max-height: 80vh; overflow-y: auto;";
