@@ -1,22 +1,30 @@
 (function() {
     'use strict';
 
-    // Konfiguracja limitów gwiazdek
+    // SZTYWNA LISTA - tylko te gemy będą liczone
     const limits = {
-        "Atak Plus": 4, "Atak Magiczny Plus": 4, "Obrona Plus": 4, "Obrona Magiczna Plus": 4,
-        "Szczęście Plus": 4, "Szybkość Plus": 4, "HP Plus": 5, "MP Plus": 5,
-        "Szybkość Plus 2": 3, "Atak Plus 2": 3, "Atak Magiczny Plus 2": 3,
-        "Obrona Plus 2": 3, "Obrona Magiczna Plus 2": 3, "Szczęście Plus 2": 3
+        "Atak Plus": 4, 
+        "Atak Magiczny Plus": 4, 
+        "Obrona Plus": 4, 
+        "Obrona Magiczna Plus": 4,
+        "Szczęście Plus": 4, 
+        "Szybkość Plus": 4, 
+        "HP Plus": 5, 
+        "MP Plus": 5,
+        "Szybkość Plus 2": 3, 
+        "Atak Plus 2": 3, 
+        "Atak Magiczny Plus 2": 3,
+        "Obrona Plus 2": 3, 
+        "Obrona Magiczna Plus 2": 3, 
+        "Szczęście Plus 2": 3
     };
 
     let isMinimized = false;
 
-    // Funkcja czyszcząca nazwy z ikon i śmieci
     function cleanName(rawName) {
         return rawName.replace(/[^a-zA-Z0-9 ąćęłńóśźżĄĆĘŁŃÓŚŹŻ]/g, '').trim();
     }
 
-    // Funkcja zliczająca gemy na stronie
     function countGems() {
         const gems = document.querySelectorAll('.GemsCatalogItem');
         let data = { plus: { ready: {}, todo: {} }, plus2: { ready: {}, todo: {} } };
@@ -26,9 +34,10 @@
             if (!nameEl) return;
             const name = cleanName(nameEl.innerText);
 
-            if (name.includes("Plus")) {
+            // KLUCZOWA ZMIANA: Sprawdza czy nazwa jest dokładnie w naszym słowniku 'limits'
+            if (limits.hasOwnProperty(name)) {
                 const stars = gem.querySelectorAll('.star.full').length;
-                const limit = limits[name] || 5;
+                const limit = limits[name];
                 const category = name.includes("Plus 2") ? "plus2" : "plus";
                 const status = stars >= limit ? "ready" : "todo";
 
@@ -39,7 +48,6 @@
         updateUI(data);
     }
 
-    // Renderowanie list tekstowych
     function renderList(obj, color) {
         const keys = Object.keys(obj).sort();
         if (keys.length === 0) return '<div style="color: #555; font-style: italic; font-size: 10px; margin-bottom:5px;">Brak</div>';
@@ -50,12 +58,9 @@
             </div>`).join('');
     }
 
-    // Aktualizacja zawartości okna
     function updateUI(data) {
         let panel = document.getElementById('gem-js-panel');
-        if (!panel) {
-            panel = createPanel();
-        }
+        if (!panel) panel = createPanel();
         
         const content = document.getElementById('gem-js-content');
         if (isMinimized) {
@@ -82,22 +87,14 @@
         }
     }
 
-    // Tworzenie szkieletu okna
     function createPanel() {
         const panel = document.createElement('div');
         panel.id = 'gem-js-panel';
-        panel.style = `
-            position: fixed; top: 100px; right: 20px; 
-            background: rgba(15, 15, 15, 0.98); color: #fff; 
-            border: 1px solid #ffd700; border-radius: 4px; 
-            z-index: 999999; font-family: Verdana, sans-serif; 
-            font-size: 11px; box-shadow: 0 0 20px rgba(0,0,0,0.8); 
-            user-select: none;
-        `;
+        panel.style = "position: fixed; top: 100px; right: 20px; background: rgba(15, 15, 15, 0.98); color: #fff; border: 1px solid #ffd700; border-radius: 4px; z-index: 999999; font-family: Verdana, sans-serif; font-size: 11px; box-shadow: 0 0 20px rgba(0,0,0,0.8); user-select: none;";
         
         const header = document.createElement('div');
         header.style = "background: #ffd700; color: #000; padding: 5px 10px; font-weight: bold; cursor: move; display: flex; justify-content: space-between; align-items: center; border-radius: 3px 3px 0 0;";
-        header.innerHTML = `<span>GEMY</span> <span id="gem-js-min-btn" style="cursor: pointer; padding: 0 6px; background: #000; color: #ffd700; border-radius: 2px; font-size: 10px;">_</span>`;
+        header.innerHTML = `<span>GEM STATUS</span> <span id="gem-js-min-btn" style="cursor: pointer; padding: 0 6px; background: #000; color: #ffd700; border-radius: 2px; font-size: 10px;">_</span>`;
         
         const content = document.createElement('div');
         content.id = 'gem-js-content';
@@ -107,46 +104,29 @@
         panel.appendChild(content);
         document.body.appendChild(panel);
 
-        // Obsługa minimalizacji
         document.getElementById('gem-js-min-btn').onclick = (e) => {
             isMinimized = !isMinimized;
             e.target.innerText = isMinimized ? "□" : "_";
             countGems();
         };
 
-        // Obsługa przesuwania (Drag & Drop)
         let p1 = 0, p2 = 0, p3 = 0, p4 = 0;
         header.onmousedown = (e) => {
-            p3 = e.clientX;
-            p4 = e.clientY;
-            document.onmouseup = () => {
-                document.onmouseup = null;
-                document.onmousemove = null;
-            };
+            p3 = e.clientX; p4 = e.clientY;
+            document.onmouseup = () => { document.onmouseup = null; document.onmousemove = null; };
             document.onmousemove = (e) => {
-                p1 = p3 - e.clientX;
-                p2 = p4 - e.clientY;
-                p3 = e.clientX;
-                p4 = e.clientY;
-                
+                p1 = p3 - e.clientX; p2 = p4 - e.clientY; p3 = e.clientX; p4 = e.clientY;
                 let nTop = panel.offsetTop - p2;
                 let nLeft = panel.offsetLeft - p1;
-
-                // Blokada w obrębie ekranu
                 if (nTop < 0) nTop = 0;
                 if (nLeft < 0) nLeft = 0;
                 if (nTop + panel.offsetHeight > window.innerHeight) nTop = window.innerHeight - panel.offsetHeight;
                 if (nLeft + panel.offsetWidth > window.innerWidth) nLeft = window.innerWidth - panel.offsetWidth;
-
-                panel.style.top = nTop + "px";
-                panel.style.left = nLeft + "px";
-                panel.style.right = 'auto'; // Wyłączamy fixed right po przesunięciu
+                panel.style.top = nTop + "px"; panel.style.left = nLeft + "px"; panel.style.right = 'auto';
             };
         };
-
         return panel;
     }
 
-    // Start pętli odświeżającej co 1 sekundę
     setInterval(countGems, 1000);
 })();
