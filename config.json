@@ -7,7 +7,7 @@
       "file": "leczenie.js",
       "settings": [
         { "id": "k_heal", "label": "Lecz (klawisz)", "default": "KeyT" },
-        { "id": "k_ref", "label": "Ref (klawisz)", "default": "KeyR" }
+        { "id": "k_ref", "label": "Odśwież (klawisz)", "default": "KeyR" }
       ]
     },
     { "id": "potwory", "name": "Potwory switch (V)", "file": "potwory.js"},
