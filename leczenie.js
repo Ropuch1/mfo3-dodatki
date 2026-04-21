@@ -1,6 +1,6 @@
 (function() {
     'use strict';
-    console.log("%c[Leczenie] Silnik uruchomiony!", "color: #e74c3c; font-weight: bold;");
+    console.log("%c[Leczenie] Skróty klawiszowe załadowane!", "color: #2ecc71; font-weight: bold;");
 
     function doHeal() {
         const btn = document.querySelector('.auto-heal-link') || 
@@ -8,28 +8,31 @@
                     document.querySelector('.auto-heal-btn');
         if (btn) {
             btn.click();
-            console.log("[Leczenie] Kliknięto!");
-        } else {
-            console.log("[Leczenie] Nie znaleziono przycisku.");
+            console.log("[Leczenie] Wykonano!");
         }
     }
 
     window.addEventListener('keydown', (e) => {
         if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') return;
         
-        if (e.code === 'KeyT') { 
+        // Pobieranie aktualnych ustawień z pamięci
+        const keyHeal = localStorage.getItem('mfo3_key_heal') || 'KeyT';
+        const keyReload = localStorage.getItem('mfo3_key_reload') || 'KeyR';
+
+        if (e.code === keyHeal) { 
             e.preventDefault(); 
             doHeal(); 
         }
-        if (e.code === 'KeyR') { 
+        if (e.code === keyReload) { 
             e.preventDefault(); 
             location.reload(); 
         }
     }, true);
 
-    // Myszka (M4/M5)
+    // Środkowy przycisk myszy
     window.addEventListener('mousedown', (e) => {
-        if (e.button === 1) { doHeal(); }
-        if (e.button === 1) { location.reload(); }
+        if (e.button === 1) { 
+            doHeal(); 
+        }
     }, true);
 })();
