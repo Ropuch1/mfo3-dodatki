@@ -1,7 +1,15 @@
 {
   "modules": [
     { "id": "wasd", "name": "Sterowanie WASD", "file": "wasd.js" },
-    { "id": "heal", "name": "Leczenie (T/R M1/M1 )", "file": "leczenie.js" },
+    { 
+      "id": "heal", 
+      "name": "Leczenie", 
+      "file": "leczenie.js",
+      "settings": [
+        { "id": "k_heal", "label": "Lecz (klawisz)", "default": "KeyT" },
+        { "id": "k_ref", "label": "Ref (klawisz)", "default": "KeyR" }
+      ]
+    },
     { "id": "potwory", "name": "Potwory switch (V)", "file": "potwory.js"},
     { "id": "autof", "name": "Autof", "file": "autof.js"},
     { "id": "portal", "name": "Portale - Bossy", "file": "portal.js"},
