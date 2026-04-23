@@ -17,6 +17,15 @@
     { "id": "piorko", "name": "Piórko Garudy", "file": "piorko.js"},
     { "id": "chat", "name": "LL", "file": "chat.js"},
     { "id": "notif", "name": "Notyfikator", "file": "notif.js"},
-    { "id": "gemy", "name": "Licznik gemów", "file": "gemy.js"}
+    { "id": "gemy", "name": "Licznik gemów", "file": "gemy.js"},
+      { 
+      "id": "grupa", 
+      "name": "QG", 
+      "file": "grupa.js",
+      "settings": [
+        { "id": "k_invite", "label": "Zaproś ekipę (klawisz)", "default": "KeyZ" },
+        { "id": "k_accept", "label": "Akceptuj grupę (klawisz)", "default": "Enter" }
+      ]
+    },
   ]
 }
