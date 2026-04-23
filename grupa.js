@@ -8,7 +8,8 @@
         "Black Shadow",
         "Lisiara",
         "Czarny Cukier",
-        "Kazador"
+        "Kazador",
+        "Sugar"
     ];
 
     // === 2. POBIERANIE USTAWIEŃ Z TWOJEGO PANELU ===
