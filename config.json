@@ -10,15 +10,15 @@
         { "id": "k_ref", "label": "Odśwież (klawisz)", "default": "KeyR" }
       ]
     },
-    { "id": "potwory", "name": "Potwory switch (V)", "file": "potwory.js"},
-    { "id": "autof", "name": "Autof", "file": "autof.js"},
-    { "id": "portal", "name": "Portale - Bossy", "file": "portal.js"},
-    { "id": "filtr", "name": "Wyszukiwarka EQ", "file": "filtr.js"},
-    { "id": "piorko", "name": "Piórko Garudy", "file": "piorko.js"},
-    { "id": "chat", "name": "LL", "file": "chat.js"},
-    { "id": "notif", "name": "Notyfikator", "file": "notif.js"},
-    { "id": "gemy", "name": "Licznik gemów", "file": "gemy.js"},
-      { 
+    { "id": "potwory", "name": "Potwory switch (V)", "file": "potwory.js" },
+    { "id": "autof", "name": "Autof", "file": "autof.js" },
+    { "id": "portal", "name": "Portale - Bossy", "file": "portal.js" },
+    { "id": "filtr", "name": "Wyszukiwarka EQ", "file": "filtr.js" },
+    { "id": "piorko", "name": "Piórko Garudy", "file": "piorko.js" },
+    { "id": "chat", "name": "LL", "file": "chat.js" },
+    { "id": "notif", "name": "Notyfikator", "file": "notif.js" },
+    { "id": "gemy", "name": "Licznik gemów", "file": "gemy.js" },
+    { 
       "id": "grupa", 
       "name": "QG", 
       "file": "grupa.js",
@@ -26,6 +26,6 @@
         { "id": "k_invite", "label": "Zaproś ekipę (klawisz)", "default": "KeyZ" },
         { "id": "k_accept", "label": "Akceptuj grupę (klawisz)", "default": "Enter" }
       ]
-    },
+    }
   ]
 }
