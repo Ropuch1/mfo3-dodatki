@@ -71,7 +71,6 @@
         div.id = 'mfo-jackpot-text';
         
         if (isRare) {
-            // Rare Jackpot: Nie ma animacji znikania, ma przycisk X
             div.innerHTML = `
                 <div style="position:absolute; right:10px; top:10px; cursor:pointer; font-size:24px; color:#fff;" onclick="this.parentElement.remove()">×</div>
                 <div style="font-size:22px; color:#fff; margin-bottom:15px; text-shadow: 0 0 10px #fff;">🍀 ULTRA RARE 🍀</div>
@@ -79,7 +78,6 @@
             `;
             div.style.cssText = `position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); z-index: 10005; color:#00ffff; font-weight:bold; text-align:center; text-shadow:0 0 30px #000; background: rgba(0,0,0,0.9); padding: 40px; border-radius: 20px; border: 5px solid #00ffff; width: 70%; max-width: 700px; box-shadow: 0 0 100px rgba(0,255,255,0.5);`;
         } else {
-            // Normalny Jackpot: Znika sam
             div.innerHTML = `<div style="font-size:16px; opacity:0.8;">JACKPOT!</div>${name}`;
             div.style.cssText = `position:fixed; top:35%; left:50%; transform:translate(-50%, -50%); z-index: 10005; color:${settings.glowColor}; font-weight:bold; font-size:42px; text-align:center; text-shadow:0 0 20px #000, 0 0 10px ${settings.glowColor}; pointer-events:none; animation: mfoFade 4s forwards;`;
             setTimeout(() => { if(div.parentElement) div.remove(); }, 4100);
@@ -138,7 +136,11 @@
     function scan() {
         const results = document.querySelectorAll('.BattleResultsDialog');
         results.forEach(res => {
-            // Logika Rare Jackpot (1/1000)
+            // Znajdź kontener okna
+            const parent = res.closest('.WUI_Dialog') || res.closest('.LayoutBox2');
+            const target = parent ? (parent.querySelector('.dialog-container') || parent) : null;
+
+            // Logika Rare Jackpot (1/10000)
             if (!res.getAttribute('data-rare-notified')) {
                 res.setAttribute('data-rare-notified', 'true');
                 if (Math.random() < 0.0001) {
@@ -148,6 +150,7 @@
                 }
             }
 
+            // Jeśli ten konkretny raport został już raz obsłużony, nie rób nic więcej
             if (res.getAttribute('data-notified-once') === 'true') return;
 
             const items = res.querySelectorAll('.WUI_CatalogItem');
@@ -177,11 +180,15 @@
                 launchConfetti(); 
                 showJackpotText(firstName);
 
-                const parent = res.closest('.WUI_Dialog') || res.closest('.LayoutBox2');
-                if (parent) {
-                    const target = parent.querySelector('.dialog-container') || parent;
+                if (target) {
                     target.style.boxShadow = `0 0 50px 20px ${settings.glowColor}b3`;
                     target.style.outline = `5px solid ${settings.glowColor}`;
+                }
+            } else {
+                // CZYSZCZENIE: Jeśli w tym raporcie nie ma lootu, a okno "świeci" po poprzedniej walce - usuń style
+                if (target && target.style.outline !== "") {
+                    target.style.boxShadow = "";
+                    target.style.outline = "";
                 }
             }
         });
