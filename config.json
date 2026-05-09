@@ -14,7 +14,7 @@
     { "id": "autof", "name": "Autof", "file": "autof.js" },
     { "id": "portal", "name": "Portale - Bossy", "file": "portal.js" },
     { "id": "filtr", "name": "Wyszukiwarka EQ", "file": "filtr.js" },
-    { "id": "piorko", "name": "Piórko Garudy", "file": "piorko.js" },
+    { "id": "piorko", "name": "Brak piórka cię dobija?", "file": "piorko.js" },
     { "id": "chat", "name": "LL", "file": "chat.js" },
     { "id": "notif", "name": "Notyfikator", "file": "notif.js" },
     { "id": "gemy", "name": "Licznik gemów", "file": "gemy.js" },
