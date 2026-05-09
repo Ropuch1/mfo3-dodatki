@@ -11,14 +11,14 @@
     let hasCalledForHelp = false;
     let isAFK = false;
     let afkTimer;
-    let isClosedByUser = false; // <-- Flaga sprawdzająca, czy użytkownik sam zamknął czat
+    let isClosedByUser = false; 
 
+    // --- LOGIKA AFK ---
     const resetAFK = () => {
         isAFK = false;
         clearTimeout(afkTimer);
         afkTimer = setTimeout(() => { isAFK = true; }, 300000);
     };
-
     window.addEventListener('mousemove', resetAFK);
     window.addEventListener('keydown', resetAFK);
     resetAFK();
@@ -35,72 +35,27 @@
             max-width: 98vw; max-height: 98vh;
             resize: both; overflow: hidden;
         }
-        #mfo3-chat-ui.minimized { 
-            height: 34px !important; 
-            min-height: 34px !important; 
-            resize: none !important; 
-        }
-        
-        #pinned-container {
-            display: flex; flex-direction: column; gap: 4px;
-            margin: 5px 0; padding: 2px 0;
-            max-height: 100px; overflow-y: auto;
-            flex-shrink: 0;
-        }
-        .pinned-msg {
-            background: rgba(230, 126, 34, 0.2);
-            border-left: 3px solid #e67e22;
-            padding: 5px 8px; font-size: 11px; color: #ffcc00;
-            border-radius: 2px; line-height: 1.3;
-            word-wrap: break-word;
-        }
+        #mfo3-chat-ui.minimized { height: 34px !important; min-height: 34px !important; resize: none !important; }
+        #pinned-container { display: flex; flex-direction: column; gap: 4px; margin: 5px 0; padding: 2px 0; max-height: 100px; overflow-y: auto; flex-shrink: 0; }
+        .pinned-msg { background: rgba(230, 126, 34, 0.2); border-left: 3px solid #e67e22; padding: 5px 8px; font-size: 11px; color: #ffcc00; border-radius: 2px; line-height: 1.3; word-wrap: break-word; }
         .pinned-time { color: rgba(255, 204, 0, 0.6); font-size: 9px; margin-right: 4px; }
-
-        #global-msg-container {
-            flex-grow: 1; overflow-y: auto; background: #000;
-            padding: 8px; margin-bottom: 5px; font-size: 11px;
-            border: 1px solid #333; scroll-behavior: smooth;
-        }
+        #global-msg-container { flex-grow: 1; overflow-y: auto; background: #000; padding: 8px; margin-bottom: 5px; font-size: 11px; border: 1px solid #333; scroll-behavior: smooth; }
         #input-wrapper { display: flex; gap: 4px; width: 100%; align-items: stretch; flex-shrink: 0; }
-        #global-input {
-            flex-grow: 1; background: #222; border: 1px solid #e67e22;
-            color: white; padding: 6px; border-radius: 3px;
-            outline: none; font-size: 12px; min-width: 0;
-        }
-        .action-btn {
-            border: none; color: white; padding: 0 8px;
-            border-radius: 3px; cursor: pointer; font-weight: bold;
-            font-size: 11px;
-        }
+        #global-input { flex-grow: 1; background: #222; border: 1px solid #e67e22; color: white; padding: 6px; border-radius: 3px; outline: none; font-size: 12px; min-width: 0; }
+        .action-btn { border: none; color: white; padding: 0 8px; border-radius: 3px; cursor: pointer; font-weight: bold; font-size: 11px; }
         #quick-ide-btn { background: #2980b9; }
         #hydraulik-btn { background: #5d4037; }
         #announcement-btn { background: #c0392b; }
         #send-btn { background: #e67e22; }
-        
-        .msg-announcement {
-            background: rgba(192, 57, 43, 0.2) !important;
-            border: 1px solid #c0392b !important;
-            padding: 5px !important; border-radius: 4px;
-            animation: pulse-red 2s infinite;
-        }
-        @keyframes pulse-red {
-            0% { border-color: #c0392b; }
-            50% { border-color: #ff4d4d; }
-            100% { border-color: #c0392b; }
-        }
+        .msg-announcement { background: rgba(192, 57, 43, 0.2) !important; border: 1px solid #c0392b !important; padding: 5px !important; border-radius: 4px; animation: pulse-red 2s infinite; }
+        @keyframes pulse-red { 0% { border-color: #c0392b; } 50% { border-color: #ff4d4d; } 100% { border-color: #c0392b; } }
         .chat-btn { cursor: pointer; margin-left: 8px; font-weight: bold; font-size: 14px; }
         #online-indicator { cursor: pointer; color: #2ecc71; font-size: 11px; font-weight: bold; margin-right: 10px; position: relative; }
-        #online-indicator:hover::after {
-            content: attr(data-online-list);
-            position: absolute; right: 0; top: 22px;
-            background: #1a1a1a; border: 1px solid #e67e22;
-            padding: 8px; border-radius: 4px; white-space: pre;
-            z-index: 1000001; font-size: 11px; color: #fff;
-            box-shadow: 0 4px 12px #000; min-width: 120px;
-        }
+        #online-indicator:hover::after { content: attr(data-online-list); position: absolute; right: 0; top: 22px; background: #1a1a1a; border: 1px solid #e67e22; padding: 8px; border-radius: 4px; white-space: pre; z-index: 1000001; font-size: 11px; color: #fff; box-shadow: 0 4px 12px #000; min-width: 120px; }
     `;
     document.head.appendChild(style);
 
+    // --- INICJALIZACJA UI ---
     const settings = JSON.parse(localStorage.getItem('mfo3_chat_v6')) || {
         top: 300, left: 10, width: 320, height: 250, minimized: false
     };
@@ -112,7 +67,6 @@
     ui.style.left = settings.left + "px";
     ui.style.width = settings.width + "px";
     if (!settings.minimized) ui.style.height = settings.height + "px";
-    document.body.appendChild(ui);
 
     ui.innerHTML = `
         <div id="chat-header" style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #e67e22; padding-bottom:4px; cursor:move; flex-shrink:0; height:18px;">
@@ -140,6 +94,7 @@
     const sendBtn = ui.querySelector('#send-btn');
     const onlineSign = ui.querySelector('#online-indicator');
 
+    // --- FUNKCJE POMOCNICZE ---
     const saveSettings = () => {
         const isMin = ui.classList.contains('minimized');
         const oldData = JSON.parse(localStorage.getItem('mfo3_chat_v6')) || {};
@@ -157,6 +112,7 @@
         return nickElement ? nickElement.innerText.trim() : "Anonim";
     };
 
+    // --- KOMUNIKACJA Z FIREBASE ---
     async function sendMessage(text, isAnnouncement = false) {
         if (!text.trim()) return;
         const finalMsg = isAnnouncement ? ANN_MARKER + text : text;
@@ -194,36 +150,27 @@
                 
                 const div = document.createElement('div');
                 div.style.cssText = "margin-bottom:6px; font-size:11px; word-wrap:break-word;";
-                
                 if (isAnn) {
                     div.classList.add('msg-announcement');
-                    if (now - m.time < 3600000) {
-                        announcements[m.nick] = { msg: cleanMsg, time: d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) };
-                    }
+                    if (now - m.time < 3600000) announcements[m.nick] = { msg: cleanMsg, time: d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) };
                 }
-
                 div.innerHTML = `<span style="color:#777; font-size:10px;">[${d.toLocaleTimeString()}]</span> <b style="color:#f1c40f">${m.nick}:</b> <span style="color:#eee">${cleanMsg}</span>`;
                 container.appendChild(div);
             });
 
             pinnedContainer.innerHTML = "";
-            const keys = Object.keys(announcements);
-            if (keys.length > 0) {
-                pinnedContainer.style.display = "flex";
-                keys.forEach(nick => {
-                    const p = document.createElement('div');
-                    p.className = 'pinned-msg';
-                    p.innerHTML = `<span class="pinned-time">[${announcements[nick].time}]</span> 📌 <b>${nick}:</b> ${announcements[nick].msg}`;
-                    pinnedContainer.appendChild(p);
-                });
-            } else {
-                pinnedContainer.style.display = "none";
-            }
-
+            Object.keys(announcements).forEach(nick => {
+                const p = document.createElement('div');
+                p.className = 'pinned-msg';
+                p.innerHTML = `<span class="pinned-time">[${announcements[nick].time}]</span> 📌 <b>${nick}:</b> ${announcements[nick].msg}`;
+                pinnedContainer.appendChild(p);
+            });
+            pinnedContainer.style.display = Object.keys(announcements).length > 0 ? "flex" : "none";
             container.scrollTop = container.scrollHeight;
         } catch (err) { }
     }
 
+    // --- OBSŁUGA ZDARZEŃ UI ---
     ui.querySelector('#quick-ide-btn').onclick = () => sendMessage("ide");
     ui.querySelector('#hydraulik-btn').onclick = () => sendMessage("ile jeszcze tego gnoju");
     ui.querySelector('#announcement-btn').onclick = () => { if(input.value.trim()) sendMessage(input.value, true); };
@@ -233,10 +180,8 @@
     ui.querySelector('#toggle-chat').onclick = function() {
         const isMin = ui.classList.toggle('minimized');
         this.innerText = isMin ? '▢' : '_';
-        
-        if (isMin) {
-            ui.style.height = "34px";
-        } else {
+        if (isMin) ui.style.height = "34px";
+        else {
             const saved = JSON.parse(localStorage.getItem('mfo3_chat_v6'));
             ui.style.height = (saved ? saved.height : 250) + "px";
         }
@@ -244,6 +189,9 @@
         if (!isMin) fetchMessages();
     };
 
+    ui.querySelector('#close-chat').onclick = () => { isClosedByUser = true; ui.remove(); };
+
+    // Drag & Drop
     let isDragging = false, oL, oT;
     ui.addEventListener('mousedown', (e) => { 
         if (e.target.id === 'chat-header') { 
@@ -253,33 +201,18 @@
     });
     document.addEventListener('mousemove', (e) => { 
         if (isDragging) { 
-            let newL = e.clientX - oL;
-            let newT = e.clientY - oT;
-
-            const maxL = window.innerWidth - ui.offsetWidth;
-            const maxT = window.innerHeight - ui.offsetHeight;
-
-            ui.style.left = Math.max(0, Math.min(newL, maxL)) + 'px'; 
-            ui.style.top = Math.max(0, Math.min(newT, maxT)) + 'px';
+            ui.style.left = Math.max(0, Math.min(e.clientX - oL, window.innerWidth - ui.offsetWidth)) + 'px'; 
+            ui.style.top = Math.max(0, Math.min(e.clientY - oT, window.innerHeight - ui.offsetHeight)) + 'px';
         } 
     });
     document.addEventListener('mouseup', () => { if (isDragging) { isDragging = false; saveSettings(); } });
 
-    new ResizeObserver(() => { 
-        if (!ui.classList.contains('minimized')) saveSettings(); 
-    }).observe(ui);
+    new ResizeObserver(() => { if (!ui.classList.contains('minimized')) saveSettings(); }).observe(ui);
 
+    // --- SYSTEM OBECNOŚCI ---
     async function updatePresence() {
         if (document.hidden) return;
-        try { 
-            await fetch(`${onlineURL}/${getMyNick()}.json`, { 
-                method: 'PUT', 
-                body: JSON.stringify({ 
-                    lastActive: { ".sv": "timestamp" },
-                    app_secret: APP_SECRET 
-                }) 
-            }); 
-        } catch (e) { }
+        try { await fetch(`${onlineURL}/${getMyNick()}.json`, { method: 'PUT', body: JSON.stringify({ lastActive: { ".sv": "timestamp" }, app_secret: APP_SECRET }) }); } catch (e) { }
     }
 
     async function fetchOnlineUsers() {
@@ -295,24 +228,36 @@
         } catch (e) { }
     }
 
-    // ZAMKNIĘCIE CZATU
-    ui.querySelector('#close-chat').onclick = () => {
-        isClosedByUser = true; // Ustaw flagę ręcznego zamknięcia
-        ui.remove();
+    // --- STRAŻNIK CZATU (Naprawa zamykania przy zmianie mapy) ---
+    const maintainUI = () => {
+        if (!isClosedByUser && !document.getElementById('mfo3-chat-ui')) {
+            document.documentElement.appendChild(ui); // Wstrzykujemy do HTML (wyżej niż body)
+        }
     };
 
-    // --- STRAŻNIK CZATU (Anti-Deactivate przy przechodzeniu między mapami) ---
-    // Sprawdza co 1 sekundę czy czat zniknął z dokumentu (DOM). 
-    // Jeśli tak (i użytkownik nie kliknął "X"), wstrzykuje go ponownie.
-    setInterval(() => {
-        if (!isClosedByUser && !document.body.contains(ui)) {
-            document.body.appendChild(ui);
+    // --- SYSTEM WYKRYWANIA WALKI (MutationObserver) ---
+    let isInBattle = false;
+    const battleObserver = new MutationObserver(() => {
+        const battleMenuExists = document.querySelector('.BattleMenu') !== null;
+        if (battleMenuExists && !isInBattle) {
+            isInBattle = true;
+            console.log("Walka rozpoczęta");
+        } else if (!battleMenuExists && isInBattle) {
+            isInBattle = false;
+            hasCalledForHelp = false; 
+            console.log("Walka zakończona");
         }
-    }, 1000);
+    });
+    battleObserver.observe(document.documentElement, { childList: true, subtree: true });
 
+    // --- START ---
+    setInterval(maintainUI, 500); // Pilnuj obecności okna co 0.5s
     setInterval(fetchMessages, 4000);
     setInterval(updatePresence, 30000);
     setInterval(fetchOnlineUsers, 10000);
 
-    fetchMessages(); updatePresence(); fetchOnlineUsers();
+    maintainUI();
+    fetchMessages(); 
+    updatePresence(); 
+    fetchOnlineUsers();
 })();
