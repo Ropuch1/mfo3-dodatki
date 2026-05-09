@@ -11,6 +11,7 @@
     let hasCalledForHelp = false;
     let isAFK = false;
     let afkTimer;
+    let isClosedByUser = false; // <-- Flaga sprawdzająca, czy użytkownik sam zamknął czat
 
     const resetAFK = () => {
         isAFK = false;
@@ -174,25 +175,6 @@
         } catch (err) { }
     }
 
-    // function checkZajaczekSolo() {
-    //    if (document.hidden || isAFK) return;
-    //    if (document.getElementById('MapBox_title')?.innerText !== "Polana Dzikich Zajęcy") {
-    //        hasCalledForHelp = false; return; 
-    //    }
-    //    const battleMenu = document.querySelector('.BattleMenu');
-    //    if (!battleMenu || battleMenu.offsetParent === null) {
-    //       hasCalledForHelp = false; return;
-    //    }
-    //    const enemyNames = Array.from(battleMenu.querySelectorAll('.BattleMenuLeft .item .name')).map(el => el.innerText);
-    //    const isZajaczek = enemyNames.some(name => name.includes("Zajączek Wielkanocny"));
-    //    const allyCount = battleMenu.querySelectorAll('.BattleMenuCenter .items .item').length;
-
-    //    if (isZajaczek && allyCount === 1 && !hasCalledForHelp) {
-    //        hasCalledForHelp = true;
-    //        sendMessage("Tępe chuje! Zajączek Wielkanocny!");
-    //    }
-    // }
-
     async function fetchMessages() {
         if (document.hidden || isAFK || ui.classList.contains('minimized')) return;
         try {
@@ -313,11 +295,24 @@
         } catch (e) { }
     }
 
+    // ZAMKNIĘCIE CZATU
+    ui.querySelector('#close-chat').onclick = () => {
+        isClosedByUser = true; // Ustaw flagę ręcznego zamknięcia
+        ui.remove();
+    };
+
+    // --- STRAŻNIK CZATU (Anti-Deactivate przy przechodzeniu między mapami) ---
+    // Sprawdza co 1 sekundę czy czat zniknął z dokumentu (DOM). 
+    // Jeśli tak (i użytkownik nie kliknął "X"), wstrzykuje go ponownie.
+    setInterval(() => {
+        if (!isClosedByUser && !document.body.contains(ui)) {
+            document.body.appendChild(ui);
+        }
+    }, 1000);
+
     setInterval(fetchMessages, 4000);
     setInterval(updatePresence, 30000);
     setInterval(fetchOnlineUsers, 10000);
-    // setInterval(checkZajaczekSolo, 3000);
 
     fetchMessages(); updatePresence(); fetchOnlineUsers();
-    ui.querySelector('#close-chat').onclick = () => ui.remove();
 })();
