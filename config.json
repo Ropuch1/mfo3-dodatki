@@ -26,6 +26,9 @@
         { "id": "k_invite", "label": "Zaproś cwela (klawisz)", "default": "KeyZ" },
         { "id": "k_accept", "label": "Akceptuj grupę (klawisz)", "default": "Enter" }
       ]
-    }
+    },
+    { "id": "dropboss", "name": "DropBoss", "file": "dropboss.js" },
+    { "id": "close", "name": "Zamknij mordeeee", "file": "closex.js" }
+    
   ]
 }
