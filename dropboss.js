@@ -17,5 +17,5 @@
             }
         }
     }, 300);
-    console.log("Skrypt na auto-drop aktywny.");
+
 })();
