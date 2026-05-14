@@ -2,47 +2,48 @@
     'use strict';
 
     let lastActionTime = 0;
-    const COOLDOWN = 250; // Czas blokady w milisekundach (0.25 sekundy)
+    const COOLDOWN = 200; 
 
-    window.addEventListener('keydown', function(e) {
+    const handleAction = (e) => {
+        // Tylko klawisz X
         if (e.key.toLowerCase() !== 'x') return;
 
-        // Blokada jeśli piszesz na czacie
-        if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
+        // Blokada jeśli użytkownik pisze
+        const active = document.activeElement;
+        if (['INPUT', 'TEXTAREA'].includes(active.tagName) || active.isContentEditable) return;
 
-        // Blokada spamowania klawiszem (zapobiega podwójnemu logowi)
         const now = Date.now();
         if (now - lastActionTime < COOLDOWN) return;
 
-        // Zatrzymujemy inne zdarzenia
-        e.preventDefault();
-        e.stopImmediatePropagation();
+        // --- SZUKANIE ELEMENTÓW ---
+        // Szukamy przycisku zamknięcia (różne warianty klas)
+        const closeBtn = document.querySelector('.BattleResultsDialog .dialog-close, .WUI_Dialog .dialog-close, #dialog0_content_close, .battle-results .close-btn, .close-battle-report');
+        
+        // Szukamy przycisku przeskoku (#)
+        const toEndBtn = document.querySelector('.BattlePlayback .to-end, .battle-skip-button, button[label="#"], .skip-battle-btn, [data-tooltip*="Przeskocz"]');
 
-        // 1. Sprawdzamy najpierw czy okno raportu już jest otwarte
-        const battleDialog = document.querySelector('.BattleResultsDialog');
-
-        if (battleDialog) {
-            // Jeśli log jest otwarty, szukamy tylko przycisku zamknięcia
-            const closeBtn = battleDialog.closest('.WUI_Dialog')?.querySelector('.dialog-close') ||
-                             document.getElementById('dialog0_content_close') ||
-                             document.querySelector('.dialog-close');
-
-            if (closeBtn) {
-                closeBtn.click();
-                lastActionTime = now;
-            }
-            return; // Kończymy, nie sprawdzamy przycisku # gdy log jest otwarty
+        // --- LOGIKA KLIKANIA ---
+        
+        // 1. Jeśli jest raport (nawet jeśli toEndBtn też jest widoczny), zamknij go najpierw
+        if (closeBtn && (closeBtn.offsetParent !== null || window.getComputedStyle(closeBtn).display !== 'none')) {
+            closeBtn.click();
+            lastActionTime = now;
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            return;
         }
 
-        // 2. Jeśli log NIE jest otwarty, szukamy przycisku przeskoku (#)
-        const toEndBtn = document.querySelector('.BattlePlayback .to-end');
-        // Sprawdzamy czy przycisk istnieje i czy nie jest ukryty (np. przez display:none u rodzica)
-        const isSkipVisible = toEndBtn && toEndBtn.offsetParent !== null;
-
-        if (isSkipVisible) {
+        // 2. Jeśli trwa walka i jest przycisk #
+        if (toEndBtn && (toEndBtn.offsetParent !== null || window.getComputedStyle(toEndBtn).visibility !== 'hidden')) {
             toEndBtn.click();
             lastActionTime = now;
+            e.preventDefault();
+            e.stopImmediatePropagation();
         }
+    };
 
-    }, true);
-})();
+    // Używamy 'keydown' z parametrem 'true' (capture phase)
+    // Dzięki temu nasz skrypt ma pierwszeństwo przed skryptami gry
+    window.addEventListener('keydown', handleAction, true);
+
+   
