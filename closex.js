@@ -2,41 +2,49 @@
     'use strict';
 
     let lastActionTime = 0;
-    const COOLDOWN = 200; 
+    const COOLDOWN = 250;
 
-    const performAction = (e) => {
-        // Blokada na klawisz X
+    const handleKeyX = function(e) {
+        // Reaguj tylko na X
         if (e.key.toLowerCase() !== 'x') return;
 
-        // Sprawdzenie czy użytkownik nie pisze wiadomości
+        // Ignoruj, gdy piszesz w polach tekstowych
         const active = document.activeElement;
         if (['INPUT', 'TEXTAREA'].includes(active.tagName) || active.isContentEditable) return;
 
         const now = Date.now();
         if (now - lastActionTime < COOLDOWN) return;
 
-        // Szukanie elementów (zawsze świeże zapytanie do DOM)
-        const closeBtn = document.querySelector('.BattleResultsDialog .dialog-close, .WUI_Dialog .dialog-close, #dialog0_content_close, .battle-results .close-btn');
-        const toEndBtn = document.querySelector('.BattlePlayback .to-end, .battle-skip-button, button[label="#"], .skip-battle-btn, [data-tooltip*="Przeskocz"]');
+        // Szukaj elementów dynamicznie przy każdym kliknięciu
+        const battleDialog = document.querySelector('.BattleResultsDialog');
+        const toEndBtn = document.querySelector('.BattlePlayback .to-end');
 
-        // Logika zamknięcia raportu (priorytet)
-        if (closeBtn && (closeBtn.offsetParent !== null || window.getComputedStyle(closeBtn).display !== 'none')) {
-            closeBtn.click();
-            lastActionTime = now;
-            e.preventDefault();
-            e.stopImmediatePropagation();
+        // LOGIKA ZAMYKANIA RAPORTU
+        if (battleDialog) {
+            const closeBtn = battleDialog.closest('.WUI_Dialog')?.querySelector('.dialog-close') ||
+                             document.getElementById('dialog0_content_close') ||
+                             document.querySelector('.dialog-close');
+
+            if (closeBtn) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                closeBtn.click();
+                lastActionTime = now;
+            }
             return;
         }
 
-        // Logika przeskoku animacji (#)
-        if (toEndBtn && (toEndBtn.offsetParent !== null || window.getComputedStyle(toEndBtn).display !== 'none')) {
-            toEndBtn.click();
-            lastActionTime = now;
+        // LOGIKA PRZESKOKU (#)
+        if (toEndBtn && toEndBtn.offsetParent !== null) {
             e.preventDefault();
             e.stopImmediatePropagation();
+            toEndBtn.click();
+            lastActionTime = now;
         }
     };
 
-    // Nasłuchiwanie z flagą 'true' (przechwytywanie przed skryptami gry)
-    window.addEventListener('keydown', performAction, true);
+    // Usuwamy starego listenera (jeśli był) i dodajemy nowego na window
+    window.removeEventListener('keydown', handleKeyX, true);
+    window.addEventListener('keydown', handleKeyX, true);
+
 })();
