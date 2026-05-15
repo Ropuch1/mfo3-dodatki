@@ -29,7 +29,11 @@
     },
     { "id": "dropboss", "name": "DropBoss", "file": "dropboss.js" },
     { "id": "close", "name": "Zamknij mordeeee", "file": "closex.js" },
-    { "id": "drop", "name": "DROP pod c", "file": "drop.js" }
+    { "id": "drop", "name": "DROP pod c", "file": "drop.js",
+    "settings": [
+         { "id": "k_drop", "label": "Przełączanie dropu", "default": "KeyC" }
+      ]
+    }
     
   ]
 }
