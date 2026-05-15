@@ -13,7 +13,10 @@
     };
 
     const handleKeyX = function(e) {
-        if (e.key.toLowerCase() !== 'x') return;
+        // Pobieramy wartość ustawioną przez użytkownika w panelu (domyślnie KeyX)
+        const keyClose = localStorage.getItem('mfo3_val_close_k_close') || 'KeyX';
+
+        if (e.code !== keyClose) return;
 
         const active = document.activeElement;
         if (['INPUT', 'TEXTAREA'].includes(active.tagName) || active.isContentEditable) return;
@@ -56,6 +59,4 @@
 
     window.removeEventListener('keydown', handleKeyX, true);
     window.addEventListener('keydown', handleKeyX, true);
-
-    console.log('%c Fix na podwójne okna załadowany! ', 'background: #800; color: #fff');
 })();
