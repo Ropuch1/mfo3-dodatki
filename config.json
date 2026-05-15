@@ -28,7 +28,8 @@
       ]
     },
     { "id": "dropboss", "name": "DropBoss", "file": "dropboss.js" },
-    { "id": "close", "name": "Zamknij mordeeee", "file": "closex.js" }
+    { "id": "close", "name": "Zamknij mordeeee", "file": "closex.js" },
+    { "id": "drop", "name": "DROP pod c", "file": "drop.js" }
     
   ]
 }
