@@ -1,25 +1,6 @@
 (function() {
     'use strict';
 
-    let TRIGGER_CODE = 'KeyX'; 
-    
-    try {
-        const savedKey = localStorage.getItem('addon_setting_k_attack') || localStorage.getItem('k_attack');
-        if (savedKey) {
-            TRIGGER_CODE = savedKey;
-        }
-    } catch(e) {}
-
-    document.addEvent('keydown', function(event) {
-        if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) {
-            return;
-        }
-
-        if (event.code === TRIGGER_CODE) {
-            clickNearestMonsterDOM();
-        }
-    });
-
     function clickNearestMonsterDOM() {
         if (typeof MapEngine === 'undefined' || !MapEngine.instance) {
             return;
@@ -87,4 +68,15 @@
             }
         }
     }
+
+    window.addEventListener('keydown', (e) => {
+        if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') return;
+
+        const keyAttack = localStorage.getItem('mfo3_val_heal_k_kill') || localStorage.getItem('mfo3_val_k_kill') || localStorage.getItem('k_kill') || 'KeyX';
+
+        if (e.code === keyAttack) {
+            e.preventDefault();
+            clickNearestMonsterDOM();
+        }
+    }, true);
 })();
