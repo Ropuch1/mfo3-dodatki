@@ -1,27 +1,28 @@
 (function() {
     'use strict';
 
+    let TRIGGER_CODE = 'KeyX'; 
+    try {
+        const savedKey = localStorage.getItem('mfo3_val_kill_k_kill') || localStorage.getItem('kill_k_kill') || localStorage.getItem('k_kill');
+        if (savedKey) {
+            TRIGGER_CODE = savedKey;
+        }
+    } catch(e) {}
+
+    window.addEventListener('keydown', function(event) {
+        if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) {
+            return;
+        }
+
+        if (event.code === TRIGGER_CODE) {
+            if (typeof window.clickNearestMonsterDOM === 'function') {
+                window.clickNearestMonsterDOM();
+            }
+        }
+    }, true);
+
     const injectedCode = function() {
-        let TRIGGER_CODE = 'KeyX'; 
-        
-        try {
-            const savedKey = localStorage.getItem('mfo3_val_kill_k_kill') || localStorage.getItem('kill_k_kill') || localStorage.getItem('k_kill');
-            if (savedKey) {
-                TRIGGER_CODE = savedKey;
-            }
-        } catch(e) {}
-
-        document.addEvent('keydown', function(event) {
-            if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) {
-                return;
-            }
-
-            if (event.code === TRIGGER_CODE) {
-                clickNearestMonsterDOM();
-            }
-        });
-
-        function clickNearestMonsterDOM() {
+        window.clickNearestMonsterDOM = function() {
             if (typeof MapEngine === 'undefined' || !MapEngine.instance) {
                 return;
             }
@@ -87,10 +88,10 @@
                     overlayEl.fireEvent('click', fakeEvent);
                 }
             }
-        }
+        };
     };
 
     const script = document.createElement('script');
     script.textContent = `(${injectedCode.toString()})();`;
-    document.body.appendChild(script);
+    document.documentElement.appendChild(script);
 })();
