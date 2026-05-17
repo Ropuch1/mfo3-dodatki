@@ -37,6 +37,11 @@
     "settings": [
          { "id": "k_drop", "label": "Przełączanie dropu", "default": "KeyC" }
       ]
+    },
+    { "id": "kill", "name": "Atakowanie", "file": "kill.js",
+     "settings": [
+         { "id": "k_kill", "label": "Atakuj", "default": "KeyX" }
+      ]
     }
     
   ]
