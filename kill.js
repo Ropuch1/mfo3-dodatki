@@ -2,16 +2,21 @@
     'use strict';
 
     const injectedCode = function() {
-        // Pobieramy przypisany klawisz z panelu lub dajemy 'x' jako domyślny
-        const TRIGGER_KEY = (localStorage.getItem('k_kill') || 'x').toLowerCase();
+        let TRIGGER_CODE = 'KeyX'; 
+        
+        try {
+            const savedKey = localStorage.getItem('mfo3_val_kill_k_kill') || localStorage.getItem('kill_k_kill') || localStorage.getItem('k_kill');
+            if (savedKey) {
+                TRIGGER_CODE = savedKey;
+            }
+        } catch(e) {}
 
         document.addEvent('keydown', function(event) {
             if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) {
                 return;
             }
 
-            // Zostawiamy dokładnie Twoje sprawdzanie klawisza, które działało
-            if (event.key.toLowerCase() === TRIGGER_KEY) {
+            if (event.code === TRIGGER_CODE) {
                 clickNearestMonsterDOM();
             }
         });
@@ -22,25 +27,24 @@
             }
 
             const engine = MapEngine.instance;
-
             const posEl = document.id('_player_position');
             if (!posEl) return;
             const [playerX, playerY] = posEl.get('text').split(',').map(num => parseInt(num.trim()));
 
             const monsterElements = document.getElements('div[id^="monster_"][id$="_dom"]');
-
+            
             let closestMonsterDOM = null;
             let minDistance = Infinity;
 
             monsterElements.each(function(el) {
                 const overlay = el.getNext('.overlay');
                 if (overlay && overlay.getStyle('visibility') !== 'hidden' && overlay.getStyle('opacity') !== '0') {
-
+                    
                     const rawId = el.get('id');
                     const cleanId = rawId.replace('_dom', '');
 
                     let monsterX, monsterY;
-                    const engineNPC = (engine.npcs && engine.npcs[cleanId]) ||
+                    const engineNPC = (engine.npcs && engine.npcs[cleanId]) || 
                                       (engine.map && engine.map.events && engine.map.events[cleanId]);
 
                     if (engineNPC && engineNPC.x !== undefined && engineNPC.y !== undefined) {
