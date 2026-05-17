@@ -72,7 +72,7 @@
     window.addEventListener('keydown', (e) => {
         if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') return;
 
-        const keyAttack = localStorage.getItem('mfo3_val_heal_k_kill') || localStorage.getItem('mfo3_val_k_kill') || localStorage.getItem('k_kill') || 'KeyX';
+        const keyAttack = localStorage.getItem('mfo3_val_k_kill') || localStorage.getItem('k_kill') || 'KeyX';
 
         if (e.code === keyAttack) {
             e.preventDefault();
