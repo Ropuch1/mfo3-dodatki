@@ -1,82 +1,92 @@
 (function() {
     'use strict';
 
-    function clickNearestMonsterDOM() {
-        if (typeof MapEngine === 'undefined' || !MapEngine.instance) {
-            return;
-        }
+    const injectedCode = function() {
+        // Pobieramy przypisany klawisz z panelu lub dajemy 'x' jako domyślny
+        const TRIGGER_KEY = (localStorage.getItem('k_kill') || 'x').toLowerCase();
 
-        const engine = MapEngine.instance;
-        const posEl = document.id('_player_position');
-        if (!posEl) return;
-        const [playerX, playerY] = posEl.get('text').split(',').map(num => parseInt(num.trim()));
+        document.addEvent('keydown', function(event) {
+            if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) {
+                return;
+            }
 
-        const monsterElements = document.getElements('div[id^="monster_"][id$="_dom"]');
-        
-        let closestMonsterDOM = null;
-        let minDistance = Infinity;
-
-        monsterElements.each(function(el) {
-            const overlay = el.getNext('.overlay');
-            if (overlay && overlay.getStyle('visibility') !== 'hidden' && overlay.getStyle('opacity') !== '0') {
-                
-                const rawId = el.get('id');
-                const cleanId = rawId.replace('_dom', '');
-
-                let monsterX, monsterY;
-                const engineNPC = (engine.npcs && engine.npcs[cleanId]) || 
-                                  (engine.map && engine.map.events && engine.map.events[cleanId]);
-
-                if (engineNPC && engineNPC.x !== undefined && engineNPC.y !== undefined) {
-                    monsterX = engineNPC.x;
-                    monsterY = engineNPC.y;
-                } else {
-                    const left = parseInt(el.getStyle('left'));
-                    const top = parseInt(el.getStyle('top'));
-                    const height = parseInt(el.getStyle('height')) || 80;
-                    if (!isNaN(left) && !isNaN(top)) {
-                        monsterX = Math.round(left / 32);
-                        monsterY = Math.round((top + height - 16) / 32);
-                    }
-                }
-
-                if (monsterX !== undefined && monsterY !== undefined) {
-                    const distance = Math.abs(playerX - monsterX) + Math.abs(playerY - monsterY);
-                    if (distance < minDistance) {
-                        minDistance = distance;
-                        closestMonsterDOM = el;
-                    }
-                }
+            // Zostawiamy dokładnie Twoje sprawdzanie klawisza, które działało
+            if (event.key.toLowerCase() === TRIGGER_KEY) {
+                clickNearestMonsterDOM();
             }
         });
 
-        if (closestMonsterDOM) {
-            const fakeEvent = {
-                stop: function() {},
-                target: closestMonsterDOM,
-                type: 'click'
-            };
-
-            if (typeof closestMonsterDOM.fireEvent === 'function') {
-                closestMonsterDOM.fireEvent('click', fakeEvent);
+        function clickNearestMonsterDOM() {
+            if (typeof MapEngine === 'undefined' || !MapEngine.instance) {
+                return;
             }
 
-            const overlayEl = closestMonsterDOM.getNext('.overlay');
-            if (overlayEl && typeof overlayEl.fireEvent === 'function') {
-                fakeEvent.target = overlayEl;
-                overlayEl.fireEvent('click', fakeEvent);
+            const engine = MapEngine.instance;
+
+            const posEl = document.id('_player_position');
+            if (!posEl) return;
+            const [playerX, playerY] = posEl.get('text').split(',').map(num => parseInt(num.trim()));
+
+            const monsterElements = document.getElements('div[id^="monster_"][id$="_dom"]');
+
+            let closestMonsterDOM = null;
+            let minDistance = Infinity;
+
+            monsterElements.each(function(el) {
+                const overlay = el.getNext('.overlay');
+                if (overlay && overlay.getStyle('visibility') !== 'hidden' && overlay.getStyle('opacity') !== '0') {
+
+                    const rawId = el.get('id');
+                    const cleanId = rawId.replace('_dom', '');
+
+                    let monsterX, monsterY;
+                    const engineNPC = (engine.npcs && engine.npcs[cleanId]) ||
+                                      (engine.map && engine.map.events && engine.map.events[cleanId]);
+
+                    if (engineNPC && engineNPC.x !== undefined && engineNPC.y !== undefined) {
+                        monsterX = engineNPC.x;
+                        monsterY = engineNPC.y;
+                    } else {
+                        const left = parseInt(el.getStyle('left'));
+                        const top = parseInt(el.getStyle('top'));
+                        const height = parseInt(el.getStyle('height')) || 80;
+                        if (!isNaN(left) && !isNaN(top)) {
+                            monsterX = Math.round(left / 32);
+                            monsterY = Math.round((top + height - 16) / 32);
+                        }
+                    }
+
+                    if (monsterX !== undefined && monsterY !== undefined) {
+                        const distance = Math.abs(playerX - monsterX) + Math.abs(playerY - monsterY);
+                        if (distance < minDistance) {
+                            minDistance = distance;
+                            closestMonsterDOM = el;
+                        }
+                    }
+                }
+            });
+
+            if (closestMonsterDOM) {
+                const fakeEvent = {
+                    stop: function() {},
+                    target: closestMonsterDOM,
+                    type: 'click'
+                };
+
+                if (typeof closestMonsterDOM.fireEvent === 'function') {
+                    closestMonsterDOM.fireEvent('click', fakeEvent);
+                }
+
+                const overlayEl = closestMonsterDOM.getNext('.overlay');
+                if (overlayEl && typeof overlayEl.fireEvent === 'function') {
+                    fakeEvent.target = overlayEl;
+                    overlayEl.fireEvent('click', fakeEvent);
+                }
             }
         }
-    }
+    };
 
-    window.addEventListener('keydown', (e) => {
-        if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') return;
-
-        const keyAttack = localStorage.getItem('mfo3_val_k_kill') || localStorage.getItem('k_kill') || 'KeyX';
-
-        if (e.code === keyAttack) {
-            e.preventDefault();
-            clickNearestMonsterDOM();
-        }
-    }, true);
+    const script = document.createElement('script');
+    script.textContent = `(${injectedCode.toString()})();`;
+    document.body.appendChild(script);
 })();
