@@ -29,7 +29,8 @@
         .btn-main { padding: 8px; flex: 1; cursor: pointer; font-weight: bold; }
         .btn-sub { padding: 4px; flex: 1; cursor: pointer; font-size: 11px; }
     `;
-    document.head.appendChild(style);
+    // POPRAWKA: documentElement istnieje zawsze przy document-start, w przeciwieństwie do head
+    document.documentElement.appendChild(style);
 
     const defaultData = [
         { map: "Błękitna Laguna", name: "Bogini" },
@@ -195,7 +196,19 @@
         const table = document.querySelector(".PortalDialog table.WUI_Table.data-table");
         if (table) processPortal(table);
     });
-    observer.observe(document.body, { childList: true, subtree: true });
+
+    // POPRAWKA: Bezpieczny start - czekamy aż document.body będzie gotowy
+    function startObserver() {
+        if (document.body) {
+            observer.observe(document.body, { childList: true, subtree: true });
+        } else {
+            window.addEventListener('DOMContentLoaded', () => {
+                observer.observe(document.body, { childList: true, subtree: true });
+            });
+        }
+    }
+
+    startObserver();
 
     console.log("%c[Portal] Skrypt załadowany poprawnie", "color: #f1c40f; font-weight: bold;");
 })();
