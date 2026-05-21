@@ -135,15 +135,62 @@
 
     const style = document.createElement('style');
     style.innerHTML = `
-        /* Całkowicie ukrywamy oryginalny nagłówek (Nazwa / Poziom / Akcje), żeby zwolnić idealnie tyle miejsca, ile potrzebuje filtr */
         .WUI_FancySelect .header { display: none !important; }
         
-        .mfo3-clean-filter { background: #efdfbb; border-bottom: 2px solid #8c6d46; padding: 2px; display: flex; justify-content: center; align-items: center; gap: 3px; font-family: Tahoma, sans-serif; font-size: 10px; font-weight: bold; color: #3e2723; width: 100%; box-sizing: border-box; flex-wrap: nowrap; height: 26px; z-index: 999; position: relative; }
-        .mfo3-clean-filter input, .mfo3-clean-filter select { border: 1px solid #8c6d46; background: #f3e5bc; color: #000; font-weight: bold; height: 18px; font-size: 10px; box-sizing: border-box; padding: 0 1px; }
-        .mfo3-clean-filter input[type="number"] { width: 32px; text-align: center; }
-        .mfo3-clean-filter input.js-name { width: 75px; }
-        .mfo3-clean-filter select { width: 95px; }
-        .mfo3-btn { cursor: pointer; border: 1px solid #3e2723; font-weight: bold; padding: 0 4px; color: #3e2723; text-transform: uppercase; height: 18px; font-size: 9px; box-sizing: border-box; }
+        /* Kontener główny na 2 wiersze */
+        .mfo3-clean-filter { 
+            background: #efdfbb; 
+            border-bottom: 2px solid #8c6d46; 
+            padding: 3px; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 4px; 
+            font-family: Tahoma, sans-serif; 
+            font-size: 11px; 
+            font-weight: bold; 
+            color: #3e2723; 
+            width: 100%; 
+            box-sizing: border-box; 
+            z-index: 999; 
+            position: relative; 
+        }
+        
+        /* Styl pojedynczego wiersza */
+        .mfo3-filter-row { 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+            width: 100%; 
+            gap: 4px;
+        }
+
+        .mfo3-clean-filter input, .mfo3-clean-filter select { 
+            border: 1px solid #8c6d46; 
+            background: #f3e5bc; 
+            color: #000; 
+            font-weight: bold; 
+            height: 20px; 
+            font-size: 11px; 
+            box-sizing: border-box; 
+            padding: 0 4px; 
+        }
+        
+        /* Szerokości dopasowane pod dwa rzędy */
+        .mfo3-clean-filter input.js-name { flex-grow: 1; min-width: 100px; }
+        .mfo3-clean-filter input[type="number"] { width: 38px; text-align: center; }
+        .mfo3-clean-filter select { flex-grow: 1; }
+        
+        .mfo3-btn { 
+            cursor: pointer; 
+            border: 1px solid #3e2723; 
+            font-weight: bold; 
+            padding: 0 8px; 
+            color: #3e2723; 
+            text-transform: uppercase; 
+            height: 20px; 
+            font-size: 10px; 
+            box-sizing: border-box; 
+        }
     `;
     document.head.appendChild(style);
 
@@ -175,7 +222,7 @@
                 } else if (state.statFilter === 'spowolnienie') {
                     statMatch = spowolnienieItemsList.some(spowItem => itemText.includes(spowItem));
                 } else if (state.statFilter === 'skamienienie') {
-                    statMatch = skamienienieItemsList.some(skamItem => itemText.includes(skamItem));
+                    statMatch = skamienienieItemsList.some(skamItem => itemText.includes(skamienienieItemsList));
                 } else if (state.statFilter === 'pomylenie') {
                     statMatch = pomylenieItemsList.some(pomItem => itemText.includes(pomItem));
                 } else if (state.statFilter === 'paraliz') {
@@ -216,26 +263,30 @@
         const div = document.createElement('div');
         div.className = "mfo3-clean-filter";
         div.innerHTML = `
-            <input type="text" class="js-name" value="${state.nameFilter}" placeholder="Szukaj...">
-            <span>LVL:</span>
-            <input type="number" class="js-min" value="${state.minLvl}">
-            <span>-</span>
-            <input type="number" class="js-max" value="${state.maxLvl}">
-            <select class="js-stat">
-                <option value="all">Wszystkie</option>
-                <option value="zombie">Zombie</option>
-                <option value="zatrucie">Zatrucie</option>
-                <option value="uspienie">Uśpienie</option>
-                <option value="slepota">Ślepota</option>
-                <option value="spowolnienie">Spowolnienie</option>
-                <option value="skamienienie">Skamienienie</option>
-                <option value="pomylenie">Pomylenie</option>
-                <option value="paraliz">Paraliż</option>
-                <option value="klatwa">Klątwa</option>
-                <option value="furia">Furia</option>
-            </select>
-            <button class="mfo3-btn btn-ok" style="background: #d4a76a;">OK</button>
-            <button class="mfo3-btn btn-reset" style="background: #ccc;">X</button>
+            <div class="mfo3-filter-row">
+                <input type="text" class="js-name" value="${state.nameFilter}" placeholder="Szukaj...">
+                <span>LVL:</span>
+                <input type="number" class="js-min" value="${state.minLvl}">
+                <span>-</span>
+                <input type="number" class="js-max" value="${state.maxLvl}">
+            </div>
+            <div class="mfo3-filter-row">
+                <select class="js-stat">
+                    <option value="all">Wszystkie statusy</option>
+                    <option value="zombie">Zombie</option>
+                    <option value="zatrucie">Zatrucie</option>
+                    <option value="uspienie">Uśpienie</option>
+                    <option value="slepota">Ślepota</option>
+                    <option value="spowolnienie">Spowolnienie</option>
+                    <option value="skamienienie">Skamienienie</option>
+                    <option value="pomylenie">Pomylenie</option>
+                    <option value="paraliz">Paraliż</option>
+                    <option value="klatwa">Klątwa</option>
+                    <option value="furia">Furia</option>
+                </select>
+                <button class="mfo3-btn btn-ok" style="background: #d4a76a;">OK</button>
+                <button class="mfo3-btn btn-reset" style="background: #ccc;">X</button>
+            </div>
         `;
 
         div.querySelector('.js-stat').value = state.statFilter;
@@ -267,11 +318,9 @@
     };
 
     setInterval(() => {
-        // Zmiana kluczowa: szukamy kontenera niezależnie czy to .PlayerArmorsCatalog czy .PlayerWeaponsCatalog
         const containers = document.querySelectorAll('.WUI_FancySelect');
         
         containers.forEach(container => {
-            // Dodajemy filtr bezpośrednio na samej górze ramki wyboru przed listą przedmiotów
             if (!container.querySelector('.mfo3-clean-filter')) {
                 container.prepend(createUI());
             }
