@@ -134,58 +134,91 @@
 
     const style = document.createElement('style');
     style.innerHTML = `
-        /* Usuwanie oryginalnego nagłówka wyłącznie w PRAWEJ części (katalogu) */
+        /* Całkowite ukrycie oryginalnego nagłówka z gry w prawym katalogu */
         .MenuArmorsRight .WUI_FancySelect .header { 
             display: none !important; 
         }
         
+        /* Dwurzędowy, elastyczny panel dopasowany do szerokości gry */
         .mfo3-clean-filter { 
             background: #efdfbb; 
             border-bottom: 2px solid #8c6d46; 
-            padding: 2px; 
+            padding: 4px; 
             display: flex; 
-            justify-content: center; 
-            align-items: center; 
+            flex-direction: column;
             gap: 4px; 
             font-family: Tahoma, sans-serif; 
-            font-size: 10px; 
+            font-size: 11px; 
             font-weight: bold; 
             color: #3e2723; 
             width: 100%; 
             box-sizing: border-box; 
-            flex-wrap: nowrap; 
-            height: 24px; 
             z-index: 999; 
             position: relative; 
         }
+
+        /* Stylizacja rzędów wewnątrz filtra */
+        .mfo3-filter-row {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            gap: 4px;
+        }
+
+        .mfo3-filter-row.row-top {
+            justify-content: space-between;
+        }
+
+        .mfo3-lvl-inputs {
+            display: flex;
+            align-items: center;
+            gap: 2px;
+        }
+
         .mfo3-clean-filter input, .mfo3-clean-filter select { 
             border: 1px solid #8c6d46; 
             background: #f3e5bc; 
             color: #000; 
             font-weight: bold; 
-            height: 18px; 
-            font-size: 10px; 
+            height: 20px; 
+            font-size: 11px; 
             box-sizing: border-box; 
-            padding: 0 2px; 
+            padding: 0 4px; 
         }
-        .mfo3-clean-filter input[type="number"] { width: 30px; text-align: center; }
-        .mfo3-clean-filter select { width: 110px; }
+
+        .mfo3-clean-filter input[type="number"] { 
+            width: 38px; 
+            text-align: center; 
+        }
+
+        /* Select zajmuje teraz całą dostępną szerokość w dolnym rzędzie */
+        .mfo3-clean-filter select { 
+            flex-grow: 1;
+            width: 100%;
+        }
+
+        .mfo3-btn-group {
+            display: flex;
+            gap: 3px;
+        }
+
         .mfo3-btn { 
             cursor: pointer; 
             border: 1px solid #3e2723; 
             font-weight: bold; 
-            padding: 0 4px; 
+            padding: 0 6px; 
             color: #3e2723; 
-            text-transform: uppercase; 
-            height: 18px; 
-            font-size: 9px; 
+            height: 20px; 
+            font-size: 10px; 
             box-sizing: border-box; 
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
     `;
     document.head.appendChild(style);
 
     const applyFiltration = () => {
-        // Celujemy wyłącznie w opcje wewnątrz MenuArmorsRight (prawa strona)
         document.querySelectorAll('.MenuArmorsRight .WUI_FancySelect_option').forEach(opt => {
             const lvlEl = opt.querySelector('.level');
             const nameEl = opt.querySelector('.name');
@@ -214,7 +247,7 @@
                 } else if (state.statFilter === 'paraliz') {
                     statMatch = paralizItemsList.some(parItem => itemText.includes(parItem));
                 } else if (state.statFilter === 'klatwa') {
-                    statMatch = klatwaItemsList.some(klatItem => itemText.includes(klatwaItemsList));
+                    statMatch = klatwaItemsList.some(klatItem => itemText.includes(klatItem));
                 } else if (state.statFilter === 'furia') {
                     statMatch = furiaItemsList.some(furItem => itemText.includes(furItem));
                 } else if (state.statFilter !== 'all') {
@@ -246,25 +279,33 @@
         const div = document.createElement('div');
         div.className = "mfo3-clean-filter";
         div.innerHTML = `
-            <span>LVL:</span>
-            <input type="number" class="js-min" value="${state.minLvl}">
-            <span>-</span>
-            <input type="number" class="js-max" value="${state.maxLvl}">
-            <select class="js-stat">
-                <option value="all">Wszystkie statusy</option>
-                <option value="zombie">Zombie</option>
-                <option value="zatrucie">Zatrucie</option>
-                <option value="uspienie">Uśpienie</option>
-                <option value="slepota">Ślepota</option>
-                <option value="spowolnienie">Spowolnienie</option>
-                <option value="skamienienie">Skamienienie</option>
-                <option value="pomylenie">Pomylenie</option>
-                <option value="paraliz">Paraliż</option>
-                <option value="klatwa">Klątwa</option>
-                <option value="furia">Furia</option>
-            </select>
-            <button class="mfo3-btn btn-ok" style="background: #d4a76a;">OK</button>
-            <button class="mfo3-btn btn-reset" style="background: #ccc;">X</button>
+            <div class="mfo3-filter-row row-top">
+                <div class="mfo3-lvl-inputs">
+                    <span>LVL:</span>
+                    <input type="number" class="js-min" value="${state.minLvl}">
+                    <span>-</span>
+                    <input type="number" class="js-max" value="${state.maxLvl}">
+                </div>
+                <div class="mfo3-btn-group">
+                    <button class="mfo3-btn btn-ok" style="background: #d4a76a;">OK</button>
+                    <button class="mfo3-btn btn-reset" style="background: #ccc;">X</button>
+                </div>
+            </div>
+            <div class="mfo3-filter-row">
+                <select class="js-stat">
+                    <option value="all">Wszystkie statusy</option>
+                    <option value="zombie">Zombie</option>
+                    <option value="zatrucie">Zatrucie</option>
+                    <option value="uspienie">Uśpienie</option>
+                    <option value="slepota">Ślepota</option>
+                    <option value="spowolnienie">Spowolnienie</option>
+                    <option value="skamienienie">Skamienienie</option>
+                    <option value="pomylenie">Pomylenie</option>
+                    <option value="paraliz">Paraliż</option>
+                    <option value="klatwa">Klątwa</option>
+                    <option value="furia">Furia</option>
+                </select>
+            </div>
         `;
 
         div.querySelector('.js-stat').value = state.statFilter;
@@ -294,7 +335,6 @@
     };
 
     setInterval(() => {
-        // Szukamy kontenerów na filtry TYLKO po prawej stronie
         const containers = document.querySelectorAll('.MenuArmorsRight .WUI_FancySelect');
         
         containers.forEach(container => {
