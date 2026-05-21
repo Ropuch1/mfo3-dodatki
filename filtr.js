@@ -135,12 +135,15 @@
 
     const style = document.createElement('style');
     style.innerHTML = `
-        .mfo3-clean-filter { background: #efdfbb; border-bottom: 2px solid #8c6d46; padding: 2px; display: flex; justify-content: center; align-items: center; gap: 3px; font-family: Tahoma, sans-serif; font-size: 10px; font-weight: bold; color: #3e2723; width: 100%; box-sizing: border-box; flex-wrap: nowrap; height: 24px; z-index: 99; position: relative; }
+        /* Całkowicie ukrywamy oryginalny nagłówek (Nazwa / Poziom / Akcje), żeby zwolnić idealnie tyle miejsca, ile potrzebuje filtr */
+        .WUI_FancySelect .header { display: none !important; }
+        
+        .mfo3-clean-filter { background: #efdfbb; border-bottom: 2px solid #8c6d46; padding: 2px; display: flex; justify-content: center; align-items: center; gap: 3px; font-family: Tahoma, sans-serif; font-size: 10px; font-weight: bold; color: #3e2723; width: 100%; box-sizing: border-box; flex-wrap: nowrap; height: 26px; z-index: 999; position: relative; }
         .mfo3-clean-filter input, .mfo3-clean-filter select { border: 1px solid #8c6d46; background: #f3e5bc; color: #000; font-weight: bold; height: 18px; font-size: 10px; box-sizing: border-box; padding: 0 1px; }
-        .mfo3-clean-filter input[type="number"] { width: 28px; text-align: center; }
-        .mfo3-clean-filter input.js-name { width: 60px; }
-        .mfo3-clean-filter select { width: 85px; }
-        .mfo3-btn { cursor: pointer; border: 1px solid #3e2723; font-weight: bold; padding: 0 3px; color: #3e2723; text-transform: uppercase; height: 18px; font-size: 9px; box-sizing: border-box; }
+        .mfo3-clean-filter input[type="number"] { width: 32px; text-align: center; }
+        .mfo3-clean-filter input.js-name { width: 75px; }
+        .mfo3-clean-filter select { width: 95px; }
+        .mfo3-btn { cursor: pointer; border: 1px solid #3e2723; font-weight: bold; padding: 0 4px; color: #3e2723; text-transform: uppercase; height: 18px; font-size: 9px; box-sizing: border-box; }
     `;
     document.head.appendChild(style);
 
@@ -219,7 +222,7 @@
             <span>-</span>
             <input type="number" class="js-max" value="${state.maxLvl}">
             <select class="js-stat">
-                <option value="all">Statusy</option>
+                <option value="all">Wszystkie</option>
                 <option value="zombie">Zombie</option>
                 <option value="zatrucie">Zatrucie</option>
                 <option value="uspienie">Uśpienie</option>
@@ -264,24 +267,17 @@
     };
 
     setInterval(() => {
-        const tabs = document.querySelectorAll('.PlayerArmorsCatalog .WUI_Concatenator:not(.footer)');
+        // Zmiana kluczowa: szukamy kontenera niezależnie czy to .PlayerArmorsCatalog czy .PlayerWeaponsCatalog
+        const containers = document.querySelectorAll('.WUI_FancySelect');
         
-        tabs.forEach(tab => {
-            // Wrzucamy UI na samą górę elementu nadrzędnego przed tabelę, żeby gra go nie zgniatała
-            if (!tab.querySelector('.mfo3-clean-filter')) {
-                tab.prepend(createUI());
-            }
-            const list = tab.querySelector('.CatalogItems');
-            if (list) {
-                // Pozwalamy grze na jej wysokość, ale wymuszamy scroll, żeby dół nie uciekał za ekran
-                list.style.maxHeight = "345px"; 
-                list.style.overflowY = "auto";
-                list.style.setProperty('height', '345px', 'important');
+        containers.forEach(container => {
+            // Dodajemy filtr bezpośrednio na samej górze ramki wyboru przed listą przedmiotów
+            if (!container.querySelector('.mfo3-clean-filter')) {
+                container.prepend(createUI());
             }
         });
 
-        document.querySelectorAll('.footer .mfo3-clean-filter').forEach(el => el.remove());
         applyFiltration();
-    }, 500);
+    }, 400);
 
 })();
