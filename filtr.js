@@ -129,73 +129,64 @@
     let state = {
         minLvl: getSaved('mfo3_filter_min', 0),
         maxLvl: getSaved('mfo3_filter_max', 999),
-        statFilter: getSavedStr('mfo3_filter_stat', 'all'),
-        nameFilter: getSavedStr('mfo3_filter_name', '')
+        statFilter: getSavedStr('mfo3_filter_stat', 'all')
     };
 
     const style = document.createElement('style');
     style.innerHTML = `
-        .WUI_FancySelect .header { display: none !important; }
+        /* Usuwanie oryginalnego nagłówka wyłącznie w PRAWEJ części (katalogu) */
+        .MenuArmorsRight .WUI_FancySelect .header { 
+            display: none !important; 
+        }
         
-        /* Kontener główny na 2 wiersze */
         .mfo3-clean-filter { 
             background: #efdfbb; 
             border-bottom: 2px solid #8c6d46; 
-            padding: 3px; 
+            padding: 2px; 
             display: flex; 
-            flex-direction: column; 
+            justify-content: center; 
+            align-items: center; 
             gap: 4px; 
             font-family: Tahoma, sans-serif; 
-            font-size: 11px; 
+            font-size: 10px; 
             font-weight: bold; 
             color: #3e2723; 
             width: 100%; 
             box-sizing: border-box; 
+            flex-wrap: nowrap; 
+            height: 24px; 
             z-index: 999; 
             position: relative; 
         }
-        
-        /* Styl pojedynczego wiersza */
-        .mfo3-filter-row { 
-            display: flex; 
-            align-items: center; 
-            justify-content: space-between; 
-            width: 100%; 
-            gap: 4px;
-        }
-
         .mfo3-clean-filter input, .mfo3-clean-filter select { 
             border: 1px solid #8c6d46; 
             background: #f3e5bc; 
             color: #000; 
             font-weight: bold; 
-            height: 20px; 
-            font-size: 11px; 
+            height: 18px; 
+            font-size: 10px; 
             box-sizing: border-box; 
-            padding: 0 4px; 
+            padding: 0 2px; 
         }
-        
-        /* Szerokości dopasowane pod dwa rzędy */
-        .mfo3-clean-filter input.js-name { flex-grow: 1; min-width: 100px; }
-        .mfo3-clean-filter input[type="number"] { width: 38px; text-align: center; }
-        .mfo3-clean-filter select { flex-grow: 1; }
-        
+        .mfo3-clean-filter input[type="number"] { width: 30px; text-align: center; }
+        .mfo3-clean-filter select { width: 110px; }
         .mfo3-btn { 
             cursor: pointer; 
             border: 1px solid #3e2723; 
             font-weight: bold; 
-            padding: 0 8px; 
+            padding: 0 4px; 
             color: #3e2723; 
             text-transform: uppercase; 
-            height: 20px; 
-            font-size: 10px; 
+            height: 18px; 
+            font-size: 9px; 
             box-sizing: border-box; 
         }
     `;
     document.head.appendChild(style);
 
     const applyFiltration = () => {
-        document.querySelectorAll('.WUI_FancySelect_option').forEach(opt => {
+        // Celujemy wyłącznie w opcje wewnątrz MenuArmorsRight (prawa strona)
+        document.querySelectorAll('.MenuArmorsRight .WUI_FancySelect_option').forEach(opt => {
             const lvlEl = opt.querySelector('.level');
             const nameEl = opt.querySelector('.name');
             
@@ -204,11 +195,6 @@
                 const lvlMatch = (lvl >= state.minLvl && lvl <= state.maxLvl);
                 
                 const itemText = nameEl.innerText.toLowerCase();
-                
-                let nameMatch = true;
-                if (state.nameFilter.trim() !== '') {
-                    nameMatch = itemText.includes(state.nameFilter.toLowerCase());
-                }
 
                 let statMatch = true;
                 if (state.statFilter === 'zombie') {
@@ -222,39 +208,36 @@
                 } else if (state.statFilter === 'spowolnienie') {
                     statMatch = spowolnienieItemsList.some(spowItem => itemText.includes(spowItem));
                 } else if (state.statFilter === 'skamienienie') {
-                    statMatch = skamienienieItemsList.some(skamItem => itemText.includes(skamienienieItemsList));
+                    statMatch = skamienienieItemsList.some(skamItem => itemText.includes(skamItem));
                 } else if (state.statFilter === 'pomylenie') {
                     statMatch = pomylenieItemsList.some(pomItem => itemText.includes(pomItem));
                 } else if (state.statFilter === 'paraliz') {
                     statMatch = paralizItemsList.some(parItem => itemText.includes(parItem));
                 } else if (state.statFilter === 'klatwa') {
-                    statMatch = klatwaItemsList.some(klatItem => itemText.includes(klatItem));
+                    statMatch = klatwaItemsList.some(klatItem => itemText.includes(klatwaItemsList));
                 } else if (state.statFilter === 'furia') {
                     statMatch = furiaItemsList.some(furItem => itemText.includes(furItem));
                 } else if (state.statFilter !== 'all') {
                     statMatch = itemText.includes(state.statFilter.toLowerCase());
                 }
 
-                opt.style.display = (lvlMatch && nameMatch && statMatch) ? "block" : "none";
+                opt.style.display = (lvlMatch && statMatch) ? "block" : "none";
             }
         });
     };
 
-    const saveAndExecute = (min, max, stat, name) => {
+    const saveAndExecute = (min, max, stat) => {
         state.minLvl = min;
         state.maxLvl = max;
         state.statFilter = stat;
-        state.nameFilter = name;
         
         localStorage.setItem('mfo3_filter_min', min);
         localStorage.setItem('mfo3_filter_max', max);
         localStorage.setItem('mfo3_filter_stat', stat);
-        localStorage.setItem('mfo3_filter_name', name);
         
-        document.querySelectorAll('.js-min').forEach(i => i.value = state.minLvl);
-        document.querySelectorAll('.js-max').forEach(i => i.value = state.maxLvl);
-        document.querySelectorAll('.js-stat').forEach(s => s.value = state.statFilter);
-        document.querySelectorAll('.js-name').forEach(n => n.value = state.nameFilter);
+        document.querySelectorAll('.MenuArmorsRight .js-min').forEach(i => i.value = state.minLvl);
+        document.querySelectorAll('.MenuArmorsRight .js-max').forEach(i => i.value = state.maxLvl);
+        document.querySelectorAll('.MenuArmorsRight .js-stat').forEach(s => s.value = state.statFilter);
         
         applyFiltration();
     };
@@ -263,30 +246,25 @@
         const div = document.createElement('div');
         div.className = "mfo3-clean-filter";
         div.innerHTML = `
-            <div class="mfo3-filter-row">
-                <input type="text" class="js-name" value="${state.nameFilter}" placeholder="Szukaj...">
-                <span>LVL:</span>
-                <input type="number" class="js-min" value="${state.minLvl}">
-                <span>-</span>
-                <input type="number" class="js-max" value="${state.maxLvl}">
-            </div>
-            <div class="mfo3-filter-row">
-                <select class="js-stat">
-                    <option value="all">Wszystkie statusy</option>
-                    <option value="zombie">Zombie</option>
-                    <option value="zatrucie">Zatrucie</option>
-                    <option value="uspienie">Uśpienie</option>
-                    <option value="slepota">Ślepota</option>
-                    <option value="spowolnienie">Spowolnienie</option>
-                    <option value="skamienienie">Skamienienie</option>
-                    <option value="pomylenie">Pomylenie</option>
-                    <option value="paraliz">Paraliż</option>
-                    <option value="klatwa">Klątwa</option>
-                    <option value="furia">Furia</option>
-                </select>
-                <button class="mfo3-btn btn-ok" style="background: #d4a76a;">OK</button>
-                <button class="mfo3-btn btn-reset" style="background: #ccc;">X</button>
-            </div>
+            <span>LVL:</span>
+            <input type="number" class="js-min" value="${state.minLvl}">
+            <span>-</span>
+            <input type="number" class="js-max" value="${state.maxLvl}">
+            <select class="js-stat">
+                <option value="all">Wszystkie statusy</option>
+                <option value="zombie">Zombie</option>
+                <option value="zatrucie">Zatrucie</option>
+                <option value="uspienie">Uśpienie</option>
+                <option value="slepota">Ślepota</option>
+                <option value="spowolnienie">Spowolnienie</option>
+                <option value="skamienienie">Skamienienie</option>
+                <option value="pomylenie">Pomylenie</option>
+                <option value="paraliz">Paraliż</option>
+                <option value="klatwa">Klątwa</option>
+                <option value="furia">Furia</option>
+            </select>
+            <button class="mfo3-btn btn-ok" style="background: #d4a76a;">OK</button>
+            <button class="mfo3-btn btn-reset" style="background: #ccc;">X</button>
         `;
 
         div.querySelector('.js-stat').value = state.statFilter;
@@ -296,7 +274,6 @@
                 div.querySelector('.btn-ok').click();
             }
         };
-        div.querySelector('.js-name').onkeydown = triggerSearch;
         div.querySelector('.js-min').onkeydown = triggerSearch;
         div.querySelector('.js-max').onkeydown = triggerSearch;
 
@@ -305,20 +282,20 @@
             const m = parseInt(div.querySelector('.js-min').value);
             const x = parseInt(div.querySelector('.js-max').value);
             const s = div.querySelector('.js-stat').value;
-            const n = div.querySelector('.js-name').value;
-            saveAndExecute(isNaN(m) ? 0 : m, isNaN(x) ? 999 : x, s, n);
+            saveAndExecute(isNaN(m) ? 0 : m, isNaN(x) ? 999 : x, s);
         };
 
         div.querySelector('.btn-reset').onclick = (e) => {
             e.preventDefault();
-            saveAndExecute(0, 999, 'all', '');
+            saveAndExecute(0, 999, 'all');
         };
         
         return div;
     };
 
     setInterval(() => {
-        const containers = document.querySelectorAll('.WUI_FancySelect');
+        // Szukamy kontenerów na filtry TYLKO po prawej stronie
+        const containers = document.querySelectorAll('.MenuArmorsRight .WUI_FancySelect');
         
         containers.forEach(container => {
             if (!container.querySelector('.mfo3-clean-filter')) {
