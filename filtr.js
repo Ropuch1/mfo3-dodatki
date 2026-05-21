@@ -128,38 +128,39 @@
 
     let state = {
         minLvl: getSaved('mfo3_filter_min', 0),
-        maxLvl: getSaved('mfo3_filter_max', 100),
+        maxLvl: getSaved('mfo3_filter_max', 999),
         statFilter: getSavedStr('mfo3_filter_stat', 'all'),
         nameFilter: getSavedStr('mfo3_filter_name', '')
     };
 
     const style = document.createElement('style');
     style.innerHTML = `
-        .mfo3-clean-filter { background: #efdfbb; border-bottom: 2px solid #8c6d46; padding: 8px; display: flex; justify-content: center; align-items: center; gap: 8px; font-family: Tahoma, sans-serif; font-size: 11px; font-weight: bold; color: #3e2723; width: 100%; box-sizing: border-box; flex-wrap: wrap; }
-        .mfo3-clean-filter input, .mfo3-clean-filter select { border: 1px solid #8c6d46; background: #f3e5bc; color: #000; font-weight: bold; height: 20px; font-size: 11px; box-sizing: border-box; }
-        .mfo3-clean-filter input[type="number"] { width: 40px; text-align: center; }
-        .mfo3-clean-filter input.js-name { width: 90px; padding: 0 4px; }
-        .mfo3-clean-filter select { width: 105px; }
-        .mfo3-btn { cursor: pointer; border: 1px solid #3e2723; font-weight: bold; padding: 2px 6px; color: #3e2723; text-transform: uppercase; height: 20px; font-size: 10px; }
+        .mfo3-clean-filter { background: #efdfbb; border-bottom: 2px solid #8c6d46; padding: 4px; display: flex; justify-content: center; align-items: center; gap: 4px; font-family: Tahoma, sans-serif; font-size: 11px; font-weight: bold; color: #3e2723; width: 100%; box-sizing: border-box; flex-wrap: nowrap; }
+        .mfo3-clean-filter input, .mfo3-clean-filter select { border: 1px solid #8c6d46; background: #f3e5bc; color: #000; font-weight: bold; height: 20px; font-size: 11px; box-sizing: border-box; padding: 0 2px; }
+        .mfo3-clean-filter input[type="number"] { width: 32px; text-align: center; }
+        .mfo3-clean-filter input.js-name { width: 65px; }
+        .mfo3-clean-filter select { width: 90px; }
+        .mfo3-btn { cursor: pointer; border: 1px solid #3e2723; font-weight: bold; padding: 2px 4px; color: #3e2723; text-transform: uppercase; height: 20px; font-size: 10px; box-sizing: border-box; }
     `;
     document.head.appendChild(style);
 
     const applyFiltration = () => {
         document.querySelectorAll('.WUI_FancySelect_option').forEach(opt => {
             const lvlEl = opt.querySelector('.level');
-            if (lvlEl) {
+            const nameEl = opt.querySelector('.name');
+            
+            if (lvlEl && nameEl) {
                 const lvl = parseInt(lvlEl.innerText.replace(/[^0-9]/g, '')) || 0;
                 const lvlMatch = (lvl >= state.minLvl && lvl <= state.maxLvl);
                 
-                const itemText = opt.innerText.toLowerCase();
+                const itemText = nameEl.innerText.toLowerCase();
                 
-                // 1. Filtr tekstu (nazwy)
+                // Poprawione dokładne sprawdzanie nazwy z wewnętrznego diva gry
                 let nameMatch = true;
                 if (state.nameFilter.trim() !== '') {
                     nameMatch = itemText.includes(state.nameFilter.toLowerCase());
                 }
 
-                // 2. Filtr statusu
                 let statMatch = true;
                 if (state.statFilter === 'zombie') {
                     statMatch = zombieItemsList.some(zombieItem => itemText.includes(zombieItem));
@@ -213,13 +214,11 @@
         const div = document.createElement('div');
         div.className = "mfo3-clean-filter";
         div.innerHTML = `
-            <span>NAZWA:</span>
-            <input type="text" class="js-name" value="${state.nameFilter}" placeholder="Szukaj...">
+            <input type="text" class="js-name" value="${state.nameFilter}" placeholder="Nazwa...">
             <span>LVL:</span>
             <input type="number" class="js-min" value="${state.minLvl}">
             <span>-</span>
             <input type="number" class="js-max" value="${state.maxLvl}">
-            <span>STATUS:</span>
             <select class="js-stat">
                 <option value="all">Wszystkie</option>
                 <option value="zombie">Zombie</option>
@@ -239,7 +238,6 @@
 
         div.querySelector('.js-stat').value = state.statFilter;
 
-        // Obsługa wciśnięcia Enter w polach tekstowych
         const triggerSearch = (e) => {
             if (e.key === 'Enter') {
                 div.querySelector('.btn-ok').click();
@@ -275,8 +273,9 @@
             }
             const list = tab.querySelector('.CatalogItems');
             if (list) {
-                list.style.height = "385px";
+                list.style.height = "355px";
                 list.style.overflowY = "auto";
+                list.style.boxSizing = "border-box";
             }
         });
 
