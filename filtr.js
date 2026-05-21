@@ -129,7 +129,8 @@
     let state = {
         minLvl: getSaved('mfo3_filter_min', 0),
         maxLvl: getSaved('mfo3_filter_max', 100),
-        statFilter: getSavedStr('mfo3_filter_stat', 'all')
+        statFilter: getSavedStr('mfo3_filter_stat', 'all'),
+        nameFilter: getSavedStr('mfo3_filter_name', '')
     };
 
     const style = document.createElement('style');
@@ -137,7 +138,8 @@
         .mfo3-clean-filter { background: #efdfbb; border-bottom: 2px solid #8c6d46; padding: 8px; display: flex; justify-content: center; align-items: center; gap: 8px; font-family: Tahoma, sans-serif; font-size: 11px; font-weight: bold; color: #3e2723; width: 100%; box-sizing: border-box; flex-wrap: wrap; }
         .mfo3-clean-filter input, .mfo3-clean-filter select { border: 1px solid #8c6d46; background: #f3e5bc; color: #000; font-weight: bold; height: 20px; font-size: 11px; box-sizing: border-box; }
         .mfo3-clean-filter input[type="number"] { width: 40px; text-align: center; }
-        .mfo3-clean-filter select { width: 110px; }
+        .mfo3-clean-filter input.js-name { width: 90px; padding: 0 4px; }
+        .mfo3-clean-filter select { width: 105px; }
         .mfo3-btn { cursor: pointer; border: 1px solid #3e2723; font-weight: bold; padding: 2px 6px; color: #3e2723; text-transform: uppercase; height: 20px; font-size: 10px; }
     `;
     document.head.appendChild(style);
@@ -149,9 +151,16 @@
                 const lvl = parseInt(lvlEl.innerText.replace(/[^0-9]/g, '')) || 0;
                 const lvlMatch = (lvl >= state.minLvl && lvl <= state.maxLvl);
                 
-                let statMatch = true;
                 const itemText = opt.innerText.toLowerCase();
+                
+                // 1. Filtr tekstu (nazwy)
+                let nameMatch = true;
+                if (state.nameFilter.trim() !== '') {
+                    nameMatch = itemText.includes(state.nameFilter.toLowerCase());
+                }
 
+                // 2. Filtr statusu
+                let statMatch = true;
                 if (state.statFilter === 'zombie') {
                     statMatch = zombieItemsList.some(zombieItem => itemText.includes(zombieItem));
                 } else if (state.statFilter === 'zatrucie') {
@@ -176,23 +185,26 @@
                     statMatch = itemText.includes(state.statFilter.toLowerCase());
                 }
 
-                opt.style.display = (lvlMatch && statMatch) ? "block" : "none";
+                opt.style.display = (lvlMatch && nameMatch && statMatch) ? "block" : "none";
             }
         });
     };
 
-    const saveAndExecute = (min, max, stat) => {
+    const saveAndExecute = (min, max, stat, name) => {
         state.minLvl = min;
         state.maxLvl = max;
         state.statFilter = stat;
+        state.nameFilter = name;
         
         localStorage.setItem('mfo3_filter_min', min);
         localStorage.setItem('mfo3_filter_max', max);
         localStorage.setItem('mfo3_filter_stat', stat);
+        localStorage.setItem('mfo3_filter_name', name);
         
         document.querySelectorAll('.js-min').forEach(i => i.value = state.minLvl);
         document.querySelectorAll('.js-max').forEach(i => i.value = state.maxLvl);
         document.querySelectorAll('.js-stat').forEach(s => s.value = state.statFilter);
+        document.querySelectorAll('.js-name').forEach(n => n.value = state.nameFilter);
         
         applyFiltration();
     };
@@ -201,6 +213,8 @@
         const div = document.createElement('div');
         div.className = "mfo3-clean-filter";
         div.innerHTML = `
+            <span>NAZWA:</span>
+            <input type="text" class="js-name" value="${state.nameFilter}" placeholder="Szukaj...">
             <span>LVL:</span>
             <input type="number" class="js-min" value="${state.minLvl}">
             <span>-</span>
@@ -225,17 +239,28 @@
 
         div.querySelector('.js-stat').value = state.statFilter;
 
+        // Obsługa wciśnięcia Enter w polach tekstowych
+        const triggerSearch = (e) => {
+            if (e.key === 'Enter') {
+                div.querySelector('.btn-ok').click();
+            }
+        };
+        div.querySelector('.js-name').onkeydown = triggerSearch;
+        div.querySelector('.js-min').onkeydown = triggerSearch;
+        div.querySelector('.js-max').onkeydown = triggerSearch;
+
         div.querySelector('.btn-ok').onclick = (e) => {
             e.preventDefault();
             const m = parseInt(div.querySelector('.js-min').value);
             const x = parseInt(div.querySelector('.js-max').value);
             const s = div.querySelector('.js-stat').value;
-            saveAndExecute(isNaN(m) ? 0 : m, isNaN(x) ? 999 : x, s);
+            const n = div.querySelector('.js-name').value;
+            saveAndExecute(isNaN(m) ? 0 : m, isNaN(x) ? 999 : x, s, n);
         };
 
         div.querySelector('.btn-reset').onclick = (e) => {
             e.preventDefault();
-            saveAndExecute(0, 999, 'all');
+            saveAndExecute(0, 999, 'all', '');
         };
         
         return div;
