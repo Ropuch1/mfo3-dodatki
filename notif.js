@@ -19,14 +19,24 @@
         font-family: sans-serif; font-size: 13px;
         box-shadow: 0 4px 15px rgba(0,0,0,0.7); min-width: 160px;
         cursor: default; user-select: none; box-sizing: border-box;
+        display: none; /* Domyślnie ukryty do czasu załadowania DOM */
     `;
-    document.body.appendChild(display);
+
+    // Bezpieczne montowanie elementu w DOM (na wypadek gdyby body jeszcze nie istniało)
+    function mountDisplay() {
+        if (document.body) {
+            document.body.appendChild(display);
+            display.style.display = "block";
+        } else {
+            setTimeout(mountDisplay, 50);
+        }
+    }
 
     // --- LOGIKA DŹWIĘKU ---
     const playLootSound = () => {
         if (!settings.soundUrl) return;
         const audio = new Audio(settings.soundUrl);
-        audio.play().catch(() => console.warn("Błąd odtwarzania dźwięku."));
+        audio.play().catch(() => console.warn("Błąd odtwarzania dźwięku. Kliknij gdziekolwiek na stronie gry, aby odblokować Autoplay."));
         setTimeout(() => { audio.pause(); audio.remove(); }, 10000);
     };
 
@@ -49,7 +59,7 @@
 
     // --- EFEKTY ---
     const launchConfetti = () => {
-        if (!settings.confettiEnabled) return;
+        if (!settings.confettiEnabled || !document.body) return;
         for (let i = 0; i < 30; i++) {
             const c = document.createElement('div');
             c.innerText = ['🎉', '✨', '⭐', '💰'][Math.floor(Math.random() * 4)];
@@ -64,6 +74,7 @@
     };
 
     const showJackpotText = (name, isRare = false) => {
+        if (!document.body) return;
         const old = document.getElementById('mfo-jackpot-text');
         if (old) old.remove();
         
@@ -131,16 +142,20 @@
             saveSettings();
         };
         display.querySelector('#l-close').onclick = () => display.remove();
+        
+        mountDisplay();
     }
 
     function scan() {
         const results = document.querySelectorAll('.BattleResultsDialog');
         results.forEach(res => {
-            // Znajdź kontener okna
+            // Jeśli ten konkretny raport został już w pełni obsłużony i oznaczony, pomiń go całkowicie
+            if (res.getAttribute('data-notified-once') === 'true') return;
+
             const parent = res.closest('.WUI_Dialog') || res.closest('.LayoutBox2');
             const target = parent ? (parent.querySelector('.dialog-container') || parent) : null;
 
-            // Logika Rare Jackpot (1/10000)
+            // Logika Rare Jackpot (1/10000) - wykonywana raz na raport walki
             if (!res.getAttribute('data-rare-notified')) {
                 res.setAttribute('data-rare-notified', 'true');
                 if (Math.random() < 0.0001) {
@@ -149,9 +164,6 @@
                     showJackpotText("", true);
                 }
             }
-
-            // Jeśli ten konkretny raport został już raz obsłużony, nie rób nic więcej
-            if (res.getAttribute('data-notified-once') === 'true') return;
 
             const items = res.querySelectorAll('.WUI_CatalogItem');
             let foundJackpot = false;
@@ -185,15 +197,13 @@
                     target.style.outline = `5px solid ${settings.glowColor}`;
                 }
             } else {
-                // CZYSZCZENIE: Jeśli w tym raporcie nie ma lootu, a okno "świeci" po poprzedniej walce - usuń style
-                if (target && target.style.outline !== "") {
-                    target.style.boxShadow = "";
-                    target.style.outline = "";
-                }
+                // Jeśli sprawdziliśmy wszystkie przedmioty w raporcie i nic nie ma, oznaczamy okno jako sprawdzone, 
+                // aby sekcja "else" nie czyściła stylów innych otwartych okien z lootem.
+                res.setAttribute('data-notified-once', 'true');
             }
         });
     }
 
     initUI();
-    setInterval(scan, 200);
+    setInterval(scan, 300); // 300ms w zupełności wystarczy i odciąży przeglądarkę
 })();
