@@ -10,6 +10,18 @@
     
     const saveSettings = () => localStorage.setItem('mfo3_loot_settings', JSON.stringify(settings));
 
+    // Wstrzyknięcie stylów dynamicznych dla ramki (bezpieczniejsze niż bezpośrednie modyfikowanie style.outline)
+    const styleEl = document.createElement('style');
+    styleEl.id = 'mfo-loot-styles';
+    styleEl.innerHTML = `
+        @keyframes mfoFade { 0%{opacity:0; margin-top:-20px} 10%{opacity:1; margin-top:0} 90%{opacity:1} 100%{opacity:0; margin-top:-40px} }
+        .mfo-loot-jackpot-glow {
+            outline: 5px solid ${settings.glowColor} !important;
+            box-shadow: 0 0 50px 20px ${settings.glowColor}b3 !important;
+        }
+    `;
+    document.head.appendChild(styleEl);
+
     const display = document.createElement('div');
     display.id = "mfo3-loot-monitor";
     display.style.cssText = `
@@ -19,10 +31,9 @@
         font-family: sans-serif; font-size: 13px;
         box-shadow: 0 4px 15px rgba(0,0,0,0.7); min-width: 160px;
         cursor: default; user-select: none; box-sizing: border-box;
-        display: none; /* Domyślnie ukryty do czasu załadowania DOM */
+        display: none;
     `;
 
-    // Bezpieczne montowanie elementu w DOM (na wypadek gdyby body jeszcze nie istniało)
     function mountDisplay() {
         if (document.body) {
             document.body.appendChild(display);
@@ -36,7 +47,7 @@
     const playLootSound = () => {
         if (!settings.soundUrl) return;
         const audio = new Audio(settings.soundUrl);
-        audio.play().catch(() => console.warn("Błąd odtwarzania dźwięku. Kliknij gdziekolwiek na stronie gry, aby odblokować Autoplay."));
+        audio.play().catch(() => console.warn("Błąd odtwarzania dźwięku. Kliknij gdziekolwiek na stronie gry."));
         setTimeout(() => { audio.pause(); audio.remove(); }, 10000);
     };
 
@@ -93,14 +104,21 @@
             div.style.cssText = `position:fixed; top:35%; left:50%; transform:translate(-50%, -50%); z-index: 10005; color:${settings.glowColor}; font-weight:bold; font-size:42px; text-align:center; text-shadow:0 0 20px #000, 0 0 10px ${settings.glowColor}; pointer-events:none; animation: mfoFade 4s forwards;`;
             setTimeout(() => { if(div.parentElement) div.remove(); }, 4100);
         }
-
-        if (!document.getElementById('mfo-anim-style')) {
-            const s = document.createElement('style'); s.id = 'mfo-anim-style';
-            s.innerHTML = `@keyframes mfoFade { 0%{opacity:0; margin-top:-20px} 10%{opacity:1; margin-top:0} 90%{opacity:1} 100%{opacity:0; margin-top:-40px} }`;
-            document.head.appendChild(s);
-        }
         document.body.appendChild(div);
     };
+
+    function updateGlowStyle() {
+        const style = document.getElementById('mfo-loot-styles');
+        if (style) {
+            style.innerHTML = `
+                @keyframes mfoFade { 0%{opacity:0; margin-top:-20px} 10%{opacity:1; margin-top:0} 90%{opacity:1} 100%{opacity:0; margin-top:-40px} }
+                .mfo-loot-jackpot-glow {
+                    outline: 5px solid ${settings.glowColor} !important;
+                    box-shadow: 0 0 50px 20px ${settings.glowColor}b3 !important;
+                }
+            `;
+        }
+    }
 
     function initUI() {
         display.innerHTML = `
@@ -133,7 +151,7 @@
         display.querySelector('#c-confetti').onchange = (e) => { settings.confettiEnabled = e.target.checked; saveSettings(); };
         display.querySelector('#c-sound').onchange = (e) => { settings.soundUrl = e.target.value.trim(); saveSettings(); };
         display.querySelector('#test-sound').onclick = () => playLootSound();
-        display.querySelector('#c-glow').oninput = (e) => { settings.glowColor = e.target.value; saveSettings(); };
+        display.querySelector('#c-glow').oninput = (e) => { settings.glowColor = e.target.value; saveSettings(); updateGlowStyle(); };
         display.querySelector('#c-text').oninput = (e) => { settings.textColor = e.target.value; saveSettings(); };
         display.querySelector('#l-min').onclick = () => {
             settings.minimized = !settings.minimized;
@@ -146,16 +164,28 @@
         mountDisplay();
     }
 
+    // Tablica przechowująca referencje do kontenerów, które aktualnie świecą
+    let activeGlows = [];
+
     function scan() {
+        // Czyszczenie starych ramek, jeśli okno raportu zniknęło z ekranu
+        activeGlows = activeGlows.filter(item => {
+            if (!document.body.contains(item.report)) {
+                if (item.target) {
+                    item.target.classList.remove('mfo-loot-jackpot-glow');
+                }
+                return false;
+            }
+            return true;
+        });
+
         const results = document.querySelectorAll('.BattleResultsDialog');
         results.forEach(res => {
-            // Jeśli ten konkretny raport został już w pełni obsłużony i oznaczony, pomiń go całkowicie
             if (res.getAttribute('data-notified-once') === 'true') return;
 
             const parent = res.closest('.WUI_Dialog') || res.closest('.LayoutBox2');
             const target = parent ? (parent.querySelector('.dialog-container') || parent) : null;
 
-            // Logika Rare Jackpot (1/10000) - wykonywana raz na raport walki
             if (!res.getAttribute('data-rare-notified')) {
                 res.setAttribute('data-rare-notified', 'true');
                 if (Math.random() < 0.0001) {
@@ -180,9 +210,11 @@
                 if (isCard || isHigh) {
                     if (!firstName) firstName = nameEl.innerText;
                     foundJackpot = true;
-                    nameEl.style.color = settings.textColor;
-                    nameEl.style.fontWeight = "bold";
-                    if (!nameEl.innerHTML.includes('★')) nameEl.innerHTML = "★ " + nameEl.innerHTML;
+                    if (nameEl) {
+                        nameEl.style.color = settings.textColor;
+                        nameEl.style.fontWeight = "bold";
+                        if (!nameEl.innerHTML.includes('★')) nameEl.innerHTML = "★ " + nameEl.innerHTML;
+                    }
                 }
             });
 
@@ -193,17 +225,16 @@
                 showJackpotText(firstName);
 
                 if (target) {
-                    target.style.boxShadow = `0 0 50px 20px ${settings.glowColor}b3`;
-                    target.style.outline = `5px solid ${settings.glowColor}`;
+                    target.classList.add('mfo-loot-jackpot-glow');
+                    // Zapisujemy powiązanie: dopóki ten raport "res" istnieje w dokumencie, kontener "target" ma świecić
+                    activeGlows.push({ report: res, target: target });
                 }
             } else {
-                // Jeśli sprawdziliśmy wszystkie przedmioty w raporcie i nic nie ma, oznaczamy okno jako sprawdzone, 
-                // aby sekcja "else" nie czyściła stylów innych otwartych okien z lootem.
                 res.setAttribute('data-notified-once', 'true');
             }
         });
     }
 
     initUI();
-    setInterval(scan, 300); // 300ms w zupełności wystarczy i odciąży przeglądarkę
+    setInterval(scan, 300);
 })();
