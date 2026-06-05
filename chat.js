@@ -109,7 +109,7 @@
 
     const getMyNick = () => {
         const nickElement = document.querySelector('.PlayerInfo .name .profile');
-        return nickElement ? nickElement.innerText.trim() : "Anonim";
+        return nickElement ? nickElement.innerText.trim() : "Dupa Murzyna";
     };
 
     // --- KOMUNIKACJA Z FIREBASE ---
