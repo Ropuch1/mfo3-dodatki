@@ -8,8 +8,19 @@
     bgMusic.loop = true;
     bgMusic.volume = parseFloat(localStorage.getItem('mfo3_music_volume')) || 0.5;
     
+    // Przywracanie czasu z ostatniego F5
+    const savedTime = localStorage.getItem('mfo3_music_time');
+    if (savedTime) bgMusic.currentTime = parseFloat(savedTime);
+    
     let isPlaying = false;
     let autoPlayBlocked = false;
+
+    // Zapisywanie czasu co sekundę
+    setInterval(() => {
+        if (!bgMusic.paused) {
+            localStorage.setItem('mfo3_music_time', bgMusic.currentTime);
+        }
+    }, 1000);
 
     function monitorMusic() {
         const titleEl = document.getElementById('MapBox_title');
@@ -25,7 +36,7 @@
                     isPlaying = true;
                     autoPlayBlocked = false;
                 }).catch(() => {
-                    autoPlayBlocked = true; // Przeglądarka zablokowała dźwięk
+                    autoPlayBlocked = true;
                 });
             }
         } else {
@@ -52,25 +63,25 @@
             
             panel.appendChild(sliderDiv);
 
-            // Obsługa przycisku odblokowania
             const btn = document.getElementById('btn-play');
             if (btn) {
                 btn.onclick = () => {
                     bgMusic.play().then(() => {
                         autoPlayBlocked = false;
-                        sliderDiv.remove(); // Odświeży się przy następnym ticku
+                        sliderDiv.remove();
                     });
                 };
             }
 
-            // Obsługa suwaka
             const input = document.getElementById('vol-range');
             const label = document.getElementById('vol-val');
-            input.oninput = function() {
-                bgMusic.volume = this.value;
-                if(label) label.innerText = Math.round(this.value * 100) + "%";
-                localStorage.setItem('mfo3_music_volume', this.value);
-            };
+            if (input) {
+                input.oninput = function() {
+                    bgMusic.volume = this.value;
+                    if(label) label.innerText = Math.round(this.value * 100) + "%";
+                    localStorage.setItem('mfo3_music_volume', this.value);
+                };
+            }
         }
     }
 
