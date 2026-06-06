@@ -1,44 +1,70 @@
 (function() {
     'use strict';
 
-    const getLink = () => localStorage.getItem('mfo3_val_przegrana_s_link');
-    const getVolume = () => parseFloat(localStorage.getItem('mfo3_defeat_volume')) || 0.5;
+    const getSetting = (id) => localStorage.getItem(`mfo3_val_muzyka_${id}`);
+    const defaultLink = "https://github.com/Ropuch1/sdfgh/raw/refs/heads/main/Vogeljongen%20-%20Hakken%20In%20De%20Mijnen%20%E2%9B%8F%EF%B8%8F%F0%9F%91%B7.mp3";
+    
+    let bgMusic = new Audio();
+    bgMusic.loop = true;
+    bgMusic.volume = parseFloat(localStorage.getItem('mfo3_music_volume')) || 0.5;
+    
+    // Przywracanie czasu z ostatniego F5
+    const savedTime = localStorage.getItem('mfo3_music_time');
+    if (savedTime) bgMusic.currentTime = parseFloat(savedTime);
+    
+    let isPlaying = false;
 
-    let audio = new Audio();
+    // Zapisywanie czasu co sekundę
+    setInterval(() => {
+        if (!bgMusic.paused) localStorage.setItem('mfo3_music_time', bgMusic.currentTime);
+    }, 1000);
+
+    function monitorMusic() {
+        const titleEl = document.getElementById('MapBox_title');
+        const targetMap = getSetting('m_mapa') || "Zakazana Kopalnia";
+        const currentMap = titleEl ? titleEl.innerText.trim() : "";
+        const currentLink = getSetting('m_link') || defaultLink;
+
+        // Ustaw źródło tylko jeśli jest inne niż aktualne
+        if (bgMusic.src !== currentLink) {
+            bgMusic.src = currentLink;
+            bgMusic.load(); // Wymuszenie załadowania nowego pliku
+        }
+
+        if (currentMap === targetMap) {
+            if (!isPlaying) {
+                // Próba odtworzenia - jeśli przeglądarka blokuje, nic się nie stanie (bezpieczne)
+                bgMusic.play().then(() => { isPlaying = true; }).catch(() => {
+                    console.warn("Autoplay zablokowany. Kliknij w grę!");
+                });
+            }
+        } else {
+            if (isPlaying) {
+                bgMusic.pause();
+                isPlaying = false;
+            }
+        }
+    }
+
+    // Suwak głośności wstrzykiwany do panelu
+    function injectVolume() {
+        const panel = document.getElementById('ropuch-panel-main');
+        if (panel && !document.getElementById('mfo-music-vol')) {
+            const container = document.createElement('div');
+            container.id = 'mfo-music-vol';
+            container.style.cssText = "margin-top:10px; padding:5px; border-top:1px solid #7a5a3a; text-align:center; font-size:9px; color:#f1c40f;";
+            container.innerHTML = `Głośność: <input type="range" min="0" max="1" step="0.01" value="${bgMusic.volume}" style="width:100%; cursor:pointer;">`;
+            
+            container.querySelector('input').oninput = function() {
+                bgMusic.volume = this.value;
+                localStorage.setItem('mfo3_music_volume', this.value);
+            };
+            panel.appendChild(container);
+        }
+    }
 
     setInterval(() => {
-        // Znajdź wszystkie okna wyników walki
-        const resultDialogs = document.querySelectorAll('.BattleResultsDialog');
-        
-        resultDialogs.forEach(dialog => {
-            if (dialog.getAttribute('data-defeat-played') === 'true') return;
-
-            // Szukamy sekcji przegranych (gdzie ID kończy się na _loosers)
-            const loosersSection = dialog.querySelector('[id$="_loosers"]');
-            
-            if (loosersSection) {
-                // Znajdź wszystkich zawodników w tej sekcji
-                const allFighters = Array.from(loosersSection.querySelectorAll('.fighter-cnt'));
-                
-                // Sprawdź czy jest tam jakikolwiek gracz (real_id zaczyna się od P:)
-                const isPlayerDefeat = allFighters.some(cnt => {
-                    const fighterSpan = cnt.querySelector('.fighter');
-                    return fighterSpan && (fighterSpan.getAttribute('real_id') || '').startsWith('P:');
-                });
-
-                // Jeśli w przegranych jest gracz (P:), graj dźwięk
-                if (isPlayerDefeat) {
-                    const link = getLink();
-                    if (link) {
-                        audio.src = link;
-                        audio.volume = getVolume();
-                        audio.play().catch(e => console.log("Przegrana: Kliknij w grę!"));
-                    }
-                }
-            }
-            
-            // Oznaczamy okno jako obsłużone
-            dialog.setAttribute('data-defeat-played', 'true');
-        });
-    }, 500);
+        monitorMusic();
+        injectVolume();
+    }, 1000);
 })();
