@@ -7,22 +7,38 @@
     let audio = new Audio();
 
     setInterval(() => {
-        // Szukamy okna wyników walki, które jest oznaczone jako przegrana (looser)
-        const resultDialog = document.querySelector('.BattleResultsDialog.looser');
+        // Znajdź wszystkie okna wyników walki
+        const resultDialogs = document.querySelectorAll('.BattleResultsDialog');
         
-        if (resultDialog && resultDialog.getAttribute('data-defeat-played') !== 'true') {
+        resultDialogs.forEach(dialog => {
+            if (dialog.getAttribute('data-defeat-played') === 'true') return;
+
+            // Szukamy sekcji przegranych (gdzie ID kończy się na _loosers)
+            const loosersSection = dialog.querySelector('[id$="_loosers"]');
             
-            // Skoro okno ma klasę 'looser' i jest otwarte, to znaczy, że przegrałeś
-            // Dźwięk zagra natychmiast po wykryciu okna, bez sprawdzania klasy .selected
-            const link = getLink();
-            if (link) {
-                audio.src = link;
-                audio.volume = getVolume();
-                audio.play().catch(e => console.log("Przegrana: Kliknij w grę, aby odblokować dźwięk"));
+            if (loosersSection) {
+                // Znajdź wszystkich zawodników w tej sekcji
+                const allFighters = Array.from(loosersSection.querySelectorAll('.fighter-cnt'));
+                
+                // Sprawdź czy jest tam jakikolwiek gracz (real_id zaczyna się od P:)
+                const isPlayerDefeat = allFighters.some(cnt => {
+                    const fighterSpan = cnt.querySelector('.fighter');
+                    return fighterSpan && (fighterSpan.getAttribute('real_id') || '').startsWith('P:');
+                });
+
+                // Jeśli w przegranych jest gracz (P:), graj dźwięk
+                if (isPlayerDefeat) {
+                    const link = getLink();
+                    if (link) {
+                        audio.src = link;
+                        audio.volume = getVolume();
+                        audio.play().catch(e => console.log("Przegrana: Kliknij w grę!"));
+                    }
+                }
             }
             
-            // Oznaczamy okno jako "obsłużone"
-            resultDialog.setAttribute('data-defeat-played', 'true');
-        }
+            // Oznaczamy okno jako obsłużone
+            dialog.setAttribute('data-defeat-played', 'true');
+        });
     }, 500);
 })();
