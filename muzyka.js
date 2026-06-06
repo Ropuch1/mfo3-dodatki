@@ -5,7 +5,7 @@
     const getSetting = (id) => localStorage.getItem(`mfo3_val_muzyka_${id}`);
     
     // Inicjalizacja dźwięku
-    const defaultLink = "https://github.com/Ropuch1/sdfgh/raw/refs/heads/main/Vogeljongen%20-%20Hakken%20In%20De%20Mijnen%20%E2%9B%8F%EF%B8%8F%F0%9F%91%B7.mp3";
+    const defaultLink = "https://github.com/Ropuch1/sdfgh/raw/refs/heads/main/Vogeljongen%20-%20Hakken%20In%20De%20Mijnen%20%E2%9B%8F%EF%B8%8F%F0%9F%91%B7%20(3).mp3";
     let bgMusic = new Audio(getSetting('m_link') || defaultLink);
     bgMusic.loop = true;
     bgMusic.volume = parseFloat(localStorage.getItem('mfo3_music_volume')) || 0.5;
