@@ -10,7 +10,7 @@
 
     function monitorMusic() {
         const titleEl = document.getElementById('MapBox_title');
-        const targetMap = getSetting('m_mapa') || "Eternia";
+        const targetMap = getSetting('m_mapa') || "Zakazana Kopalnia";
         const currentMap = titleEl ? titleEl.innerText.trim() : "";
         const currentLink = getSetting('m_link');
 
