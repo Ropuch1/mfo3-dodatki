@@ -54,7 +54,7 @@
 },
     { 
   "id": "przegrana", 
-  "name": "Dźwięk przegranej", 
+  "name": "Hydraulik.mp3", 
   "file": "przegrana.js",
   "settings": [
     { "id": "s_link", "label": "Link MP3 (Przegrana)", "default": "" }
