@@ -46,10 +46,7 @@
     { 
   "id": "muzyka", 
   "name": "Muzyka w tle", 
-  "file": "muzyka.js",
-  "settings": [
-    { "id": "m_link", "label": "Link MP3", "default": "https://github.com/Ropuch1/sdfgh/raw/refs/heads/main/Vogeljongen%20-%20Hakken%20In%20De%20Mijnen%20%E2%9B%8F%EF%B8%8F%F0%9F%91%B7.mp3" },
-    { "id": "m_mapa", "label": "Nazwa mapy", "default": "Zakazana Kopalnia" }
+  "file": "muzyka.js"
   ]
 },
     { 
