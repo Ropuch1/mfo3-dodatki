@@ -1,10 +1,10 @@
 // ==UserScript==
-// @name          MFO3 - Panel Ropucha
-// @version       5.3
-// @match         https://s1.mfo3.pl/game/
-// @grant         GM_xmlhttpRequest
-// @connect       raw.githubusercontent.com
-// @run-at        document-start
+// @name         MFO3 - Panel Ropucha
+// @version      5.4
+// @match        https://s1.mfo3.pl/game/
+// @grant        GM_xmlhttpRequest
+// @connect      raw.githubusercontent.com
+// @run-at       document-start
 // ==/UserScript==
 
 (function() {
@@ -12,13 +12,11 @@
     const REPO_URL = 'https://raw.githubusercontent.com/Ropuch1/mfo3-dodatki/main';
 
     function init() {
-        // Szybkie ładowanie configu z pamięci podręcznej, jeśli istnieje
         const cachedConfig = localStorage.getItem('ropuch_cache_config');
         if (cachedConfig) {
             try { render(JSON.parse(cachedConfig), true); } catch(e) {}
         }
 
-        // Pobieranie świeżego configu w tle
         GM_xmlhttpRequest({
             method: "GET",
             url: `${REPO_URL}/config.json?t=${Date.now()}`,
@@ -33,7 +31,6 @@
     }
 
     function render(config, isCached) {
-        // Zapobiegamy dublowaniu panelu przy przeładowaniu z tła
         if (document.getElementById('ropuch-panel-main')) {
             if (!isCached) updateModulesUI(config);
             return;
@@ -42,7 +39,7 @@
         const div = document.createElement('div');
         div.id = "ropuch-panel-main";
         const savedData = JSON.parse(localStorage.getItem('ropuch_panel_pos')) || { top: "60px", left: "auto", right: "15px", minimized: false };
-        div.style.cssText = `position:fixed; top:${savedData.top}; left:${savedData.left}; right:${savedData.right}; z-index:10000; background:rgba(45,34,23,0.95); color:#e6d3a7; padding:12px; border:2px solid #7a5a3a; font-family:Verdana; font-size:11px; border-radius:8px; width:190px; box-shadow:0 0 15px black; cursor: move; user-select: none;`;
+        div.style.cssText = `position:fixed; top:${savedData.top}; left:${savedData.left}; right:${savedData.right}; z-index:10000; background:rgba(45,34,23,0.95); color:#e6d3a7; padding:12px; border:2px solid #7a5a3a; font-family:Verdana; font-size:11px; border-radius:8px; width:220px; box-shadow:0 0 15px black; cursor: move; user-select: none;`;
 
         div.innerHTML = `
             <div id="panel-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; border-bottom:1px solid #7a5a3a; padding-bottom:5px; cursor:move;">
@@ -54,10 +51,8 @@
             </div>`;
 
         if (document.body) { document.body.appendChild(div); } else { document.documentElement.appendChild(div); }
-
         updateModulesUI(config);
 
-        // DRAG & DROP I MINIMALIZACJA
         const modsContainer = document.getElementById('mfo-mods-container');
         const minBtn = document.getElementById('ropuch-minimize');
         const savePos = () => {
@@ -104,35 +99,45 @@
 
             if (mod.settings) {
                 const sDiv = document.createElement('div');
-                sDiv.style.cssText = "margin-left:22px; margin-top:5px; display:grid; grid-template-columns: 1fr 65px; gap:4px;";
+                sDiv.style.cssText = "margin-left:22px; margin-top:5px; display:grid; grid-template-columns: 1fr 100px; gap:4px;";
 
                 mod.settings.forEach(set => {
                     const storageKey = `mfo3_val_${mod.id}_${set.id}`;
                     const currentVal = localStorage.getItem(storageKey) || set.default;
+                    const isKey = set.id.startsWith('k_');
+                    
                     sDiv.innerHTML += `
                         <span style="font-size:9px; align-self:center;">${set.label}:</span>
-                        <input type="text" readonly data-key="${storageKey}" value="${currentVal}"
-                               style="width:60px; background:#1a140e; color:#f1c40f; border:1px solid #7a5a3a; font-size:9px; text-align:center; cursor:pointer;"
-                               placeholder="Kliknij...">
+                        <input type="text" ${isKey ? 'readonly' : ''} data-key="${storageKey}" value="${currentVal}"
+                               style="width:95px; background:#1a140e; color:#f1c40f; border:1px solid #7a5a3a; font-size:9px; text-align:center; cursor:pointer;"
+                               placeholder="${isKey ? 'Kliknij...' : 'Wpisz...'}">
                     `;
                 });
                 mDiv.appendChild(sDiv);
 
                 setTimeout(() => {
                     sDiv.querySelectorAll('input').forEach(inp => {
-                        inp.addEventListener('mousedown', function(e) {
-                            e.preventDefault();
-                            this.value = "...";
-                            this.style.borderColor = "#e74c3c";
-                            const listener = (event) => {
-                                event.preventDefault(); event.stopPropagation();
-                                this.value = event.code; this.style.borderColor = "#7a5a3a";
-                                localStorage.setItem(this.dataset.key, event.code);
-                                window.removeEventListener('keydown', listener, true);
-                                this.blur();
-                            };
-                            window.addEventListener('keydown', listener, true);
-                        });
+                        if (inp.readOnly) {
+                            // Logika dla klawiszy
+                            inp.addEventListener('mousedown', function(e) {
+                                e.preventDefault();
+                                this.value = "...";
+                                this.style.borderColor = "#e74c3c";
+                                const listener = (event) => {
+                                    event.preventDefault(); event.stopPropagation();
+                                    this.value = event.code; this.style.borderColor = "#7a5a3a";
+                                    localStorage.setItem(this.dataset.key, event.code);
+                                    window.removeEventListener('keydown', listener, true);
+                                    this.blur();
+                                };
+                                window.addEventListener('keydown', listener, true);
+                            });
+                        } else {
+                            // Logika dla zwykłego tekstu (linki/nazwy map)
+                            inp.addEventListener('input', function() {
+                                localStorage.setItem(this.dataset.key, this.value);
+                            });
+                        }
                     });
                 }, 100);
             }
@@ -144,20 +149,13 @@
             });
 
             if (active) {
-                // INSTANT: Odpalenie kodu bezpośrednio z pamięci lokalnej (jak w Tampermonkey)
                 const cachedScript = localStorage.getItem('ropuch_cache_' + mod.id);
-                if (cachedScript) {
-                    injectScriptText(cachedScript);
-                }
-
-                // Pobranie nowej wersji z GitHuba w tle i aktualizacja pamięci podręcznej
+                if (cachedScript) injectScriptText(cachedScript);
                 GM_xmlhttpRequest({
                     method: "GET", url: `${REPO_URL}/${mod.file}?t=${Date.now()}`,
                     onload: function(r) {
                         localStorage.setItem('ropuch_cache_' + mod.id, r.responseText);
-                        if (!cachedScript) {
-                            injectScriptText(r.responseText);
-                        }
+                        if (!cachedScript) injectScriptText(r.responseText);
                     }
                 });
             }
