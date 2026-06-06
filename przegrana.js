@@ -1,25 +1,28 @@
 (function() {
     'use strict';
 
-    // Pobranie ustawień z localStorage (panel sam będzie je zapisywał)
-    const getSetting = (id) => localStorage.getItem(`mfo3_val_przegrana_${id}`);
-    
-    // Funkcja odtwarzająca dźwięk
-    function playDefeatSound() {
-        const soundUrl = getSetting('s_link') || "https://github.com/Ropuch1/sdfgh/raw/refs/heads/main/1492896090981142568.mp3";
-        if (!soundUrl) return;
-        
-        const audio = new Audio(soundUrl);
-        audio.volume = parseFloat(localStorage.getItem('mfo3_defeat_volume')) || 0.5;
-        audio.play().catch(e => console.log("Przegrana: Kliknij w grę, aby odblokować dźwięk"));
-    }
+    const getLink = () => localStorage.getItem('mfo3_val_przegrana_s_link');
+    const getVolume = () => parseFloat(localStorage.getItem('mfo3_defeat_volume')) || 0.5;
 
-    // Monitorowanie walki
+    let audio = new Audio();
+
     setInterval(() => {
+        // Szukamy okna wyników walki, które jest oznaczone jako przegrana (looser)
         const resultDialog = document.querySelector('.BattleResultsDialog.looser');
-        if (resultDialog && resultDialog.getAttribute('data-defeat-notified') !== 'true') {
-            resultDialog.setAttribute('data-defeat-notified', 'true');
-            playDefeatSound();
+        
+        if (resultDialog && resultDialog.getAttribute('data-defeat-played') !== 'true') {
+            
+            // Skoro okno ma klasę 'looser' i jest otwarte, to znaczy, że przegrałeś
+            // Dźwięk zagra natychmiast po wykryciu okna, bez sprawdzania klasy .selected
+            const link = getLink();
+            if (link) {
+                audio.src = link;
+                audio.volume = getVolume();
+                audio.play().catch(e => console.log("Przegrana: Kliknij w grę, aby odblokować dźwięk"));
+            }
+            
+            // Oznaczamy okno jako "obsłużone"
+            resultDialog.setAttribute('data-defeat-played', 'true');
         }
     }, 500);
 })();
