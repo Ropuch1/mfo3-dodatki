@@ -6,7 +6,7 @@
     
     // Funkcja odtwarzająca dźwięk
     function playDefeatSound() {
-        const soundUrl = getSetting('s_link') || "";
+        const soundUrl = getSetting('s_link') || "https://github.com/Ropuch1/sdfgh/raw/refs/heads/main/1492896090981142568.mp3";
         if (!soundUrl) return;
         
         const audio = new Audio(soundUrl);
