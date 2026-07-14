@@ -28,7 +28,7 @@
 
         // Szukamy kontenera przeciwników
         const enemiesContainer = document.querySelector('.BattleMenuLeft');
-        if (enemiesContainer && enemiesContainer.textContent.includes("Zielony Jaszczur")) {
+        if (enemiesContainer && enemiesContainer.textContent.includes("Fenris")) {
             // Dodatkowe zabezpieczenie: nie klikaj jeśli już jest włączona (opcjonalnie)
             // Jeśli auto-walka jest aktywna, zazwyczaj przycisk "Aktywuj auto-walkę" znika lub zmienia tekst
             aktywujAutoWalke();
