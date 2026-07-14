@@ -1,10 +1,6 @@
 (function() {
     'use strict';
 
-    // 1. Blokada okienka potwierdzenia
-    window.confirm = function() { return true; };
-
-    // Funkcja do klikania w przyciski po tekście
     const clickByText = (text) => {
         const elements = document.querySelectorAll('div, span, .menuItemTitleDiv, .WUI_Button');
         for (let el of elements) {
@@ -16,34 +12,28 @@
         return false;
     };
 
-    // Główna logika aktywacji auto-walki
     const aktywujAutoWalke = () => {
         if (!clickByText("Aktywuj auto-walkę")) {
             clickByText("Opcje");
             setTimeout(() => {
                 clickByText("Aktywuj auto-walkę");
-            }, 30);
+            }, 50);
         }
     };
 
-    // 2. Obsługa klawisza F
-    window.addEventListener('keydown', function(e) {
-        if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') return;
-        if (e.key.toLowerCase() === 'f') {
+    // Monitorowanie walki
+    const monitor = setInterval(() => {
+        // Sprawdzenie czy moduł włączony w panelu
+        if (localStorage.getItem('mfo3_setting_autof') !== 'true') return;
+
+        // Szukamy kontenera przeciwników
+        const enemiesContainer = document.querySelector('.BattleMenuLeft');
+        if (enemiesContainer && enemiesContainer.textContent.includes("Zielony Jaszczur")) {
+            // Dodatkowe zabezpieczenie: nie klikaj jeśli już jest włączona (opcjonalnie)
+            // Jeśli auto-walka jest aktywna, zazwyczaj przycisk "Aktywuj auto-walkę" znika lub zmienia tekst
             aktywujAutoWalke();
         }
-    });
+    }, 1000); // Sprawdzanie co 1 sekundę, żeby nie obciążać gry
 
-    // 3. Automatyczne wykrywanie Fenrisa (Monitorowanie walki)
-    setInterval(() => {
-        // Szukamy elementu z nazwą przeciwnika (dostosuj selektor, jeśli MFO3 ma inny dla okna walki)
-        const nazwaPrzeciwnika = document.querySelector('.battle-opponent-name') || // przykładowa klasa
-                                 document.querySelector('[data-name="Fenris"]'); 
-
-        if (nazwaPrzeciwnika && nazwaPrzeciwnika.textContent.includes("Fenris")) {
-            console.log("MFO3: Wykryto Fenrisa! Aktywuję auto-walkę...");
-            aktywujAutoWalke();
-        }
-    }, 500); // Sprawdzanie co 500ms
-
+    window.addEventListener('beforeunload', () => clearInterval(monitor));
 })();
