@@ -4,7 +4,7 @@
     let czyWWalce = false;
     let kliknietoWTejWalce = false;
 
-    // Funkcja szukająca i klikająca przycisk po tekście
+    // Funkcja klikająca
     const clickByText = (text) => {
         const elements = document.querySelectorAll('div, span, .menuItemTitleDiv, .WUI_Button');
         for (let el of elements) {
@@ -17,7 +17,6 @@
     };
 
     const aktywujAutoWalke = () => {
-        // Jeśli postać ma już włączoną autowalkę, nic nie klikaj
         const czyMamJuzAuto = document.querySelector('.item.me.auto-battle');
         if (czyMamJuzAuto) return;
 
@@ -26,38 +25,54 @@
             clickByText("Opcje");
             setTimeout(() => {
                 clickByText("Aktywuj auto-walkę");
-            }, 30); // To minimalne opóźnienie jest wymagane przez silnik gry, aby menu opcji zdążyło się otworzyć
+            }, 30);
         }
     };
 
-    // Obserwator reagujący TYLKO na wejście/wyjście z walki (zmiany struktury DOM)
-    const observer = new MutationObserver(() => {
-        // Sprawdzamy czy dodatek jest aktywny w panelu
-        if (localStorage.getItem('mfo3_setting_autofenris') !== 'true') return;
-
-        const arena = document.getElementById('BattleArena');
-        const isVisible = arena && arena.style.display !== 'none';
-
-        // SCENARIUSZ 1: Wyjście z walki (koniec walki) -> Resetujemy flagi
-        if (!isVisible && czyWWalce) {
-            czyWWalce = false;
-            kliknietoWTejWalce = false;
-            console.log("MFO3 [AutoFenris]: Walka zakończona. Blokada zdjęta.");
+    // Główna logika obserwatora
+    const inicjalizujObserwator = () => {
+        const targetNode = document.body;
+        if (!targetNode) {
+            // Jeśli jakimś cudem body nadal nie ma, spróbuj ponownie za chwilę
+            setTimeout(inicjalizujObserwator, 50);
             return;
         }
 
-        // SCENARIUSZ 2: Początek walki (wejście na arenę)
-        if (isVisible && !czyWWalce) {
-            czyWWalce = true; // Zaznaczamy, że walka trwa. Ten blok wykona się tylko RAZ na walkę.
+        const observer = new MutationObserver(() => {
+            if (localStorage.getItem('mfo3_setting_autofenris') !== 'true') return;
 
-            // Sprawdzamy przeciwnika w momencie zainicjowania areny
-            const enemies = document.querySelector('.BattleMenuLeft');
-            if (enemies && enemies.textContent.includes("Fenris") && !kliknietoWTejWalce) {
-                kliknietoWTejWalce = true; // Natychmiastowa blokada na tę walkę
-                aktywujAutoWalke();
+            const arena = document.getElementById('BattleArena');
+            const isVisible = arena && arena.style.display !== 'none';
+
+            // 1. Koniec walki -> Reset
+            if (!isVisible && czyWWalce) {
+                czyWWalce = false;
+                kliknietoWTejWalce = false;
+                console.log("MFO3 [AutoFenris]: Walka zakończona. Blokada zdjęta.");
+                return;
             }
-        }
-    });
 
-    observer.observe(document.body, { childList: true, subtree: true });
+            // 2. Początek walki -> Kliknięcie raz
+            if (isVisible && !czyWWalce) {
+                czyWWalce = true;
+
+                // Sprawdzamy czy na arenie jest Fenris
+                const enemies = document.querySelector('.BattleMenuLeft');
+                if (enemies && enemies.textContent.includes("Fenris") && !kliknietoWTejWalce) {
+                    kliknietoWTejWalce = true;
+                    aktywujAutoWalke();
+                }
+            }
+        });
+
+        observer.observe(targetNode, { childList: true, subtree: true });
+        console.log("MFO3 [AutoFenris]: Obserwator zainicjalizowany poprawnie.");
+    };
+
+    // Odpalamy dopiero, gdy struktura DOM jest w pełni gotowa
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', inicjalizujObserwator);
+    } else {
+        inicjalizujObserwator();
+    }
 })();
