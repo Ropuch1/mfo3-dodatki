@@ -18,14 +18,24 @@
 
     const aktywujAutoWalke = () => {
         const czyMamJuzAuto = document.querySelector('.item.me.auto-battle');
-        if (czyMamJuzAuto) return;
+        if (czyMamJuzAuto) {
+            console.log("MFO3 [AutoFenris]: Postać ma już włączone auto. Przerywam.");
+            return;
+        }
 
-        console.log("MFO3 [AutoFenris]: Klikam autowalkę.");
+        console.log("MFO3 [AutoFenris]: Próba kliknięcia auto-walki...");
         if (!clickByText("Aktywuj auto-walkę")) {
+            console.log("MFO3 [AutoFenris]: Nie znaleziono przycisku bezpośrednio. Próbuję przez Opcje...");
             clickByText("Opcje");
             setTimeout(() => {
-                clickByText("Aktywuj auto-walkę");
-            }, 30);
+                if (clickByText("Aktywuj auto-walkę")) {
+                    console.log("MFO3 [AutoFenris]: Sukces! Auto-walka włączona przez Opcje.");
+                } else {
+                    console.log("MFO3 [AutoFenris]: Błąd! Nie udało się kliknąć auto-walki nawet po otwarciu Opcji.");
+                }
+            }, 50);
+        } else {
+            console.log("MFO3 [AutoFenris]: Sukces! Auto-walka włączona bezpośrednio.");
         }
     };
 
@@ -33,7 +43,6 @@
     const inicjalizujObserwator = () => {
         const targetNode = document.body;
         if (!targetNode) {
-            // Jeśli jakimś cudem body nadal nie ma, spróbuj ponownie za chwilę
             setTimeout(inicjalizujObserwator, 50);
             return;
         }
@@ -48,20 +57,36 @@
             if (!isVisible && czyWWalce) {
                 czyWWalce = false;
                 kliknietoWTejWalce = false;
-                console.log("MFO3 [AutoFenris]: Walka zakończona. Blokada zdjęta.");
+                console.log("MFO3 [AutoFenris]: Walka zakończona. Resetuję blokady.");
                 return;
             }
 
-            // 2. Początek walki -> Kliknięcie raz
+            // 2. Początek walki -> Logowanie i próba wykrycia Fenrisa
             if (isVisible && !czyWWalce) {
                 czyWWalce = true;
+                console.log("MFO3 [AutoFenris]: Arena wykryta! Czekam 300ms na załadowanie interfejsu...");
 
-                // Sprawdzamy czy na arenie jest Fenris
-                const enemies = document.querySelector('.BattleMenuLeft');
-                if (enemies && enemies.textContent.includes("Fenris") && !kliknietoWTejWalce) {
-                    kliknietoWTejWalce = true;
-                    aktywujAutoWalke();
-                }
+                // Dajemy grze 300ms na wyrenderowanie tekstu "Fenris" w BattleMenuLeft
+                setTimeout(() => {
+                    const enemies = document.querySelector('.BattleMenuLeft');
+                    
+                    if (!enemies) {
+                        console.log("MFO3 [AutoFenris]: Nie znaleziono kontenera .BattleMenuLeft!");
+                        return;
+                    }
+
+                    console.log("MFO3 [AutoFenris]: Wykryte teksty w menu walki: ", enemies.textContent);
+
+                    if (enemies.textContent.includes("Fenris")) {
+                        console.log("MFO3 [AutoFenris]: !!! WYKRYTO FENRISA !!!");
+                        if (!kliknietoWTejWalce) {
+                            kliknietoWTejWalce = true;
+                            aktywujAutoWalke();
+                        }
+                    } else {
+                        console.log("MFO3 [AutoFenris]: W tej walce nie ma Fenrisa.");
+                    }
+                }, 300);
             }
         });
 
@@ -69,7 +94,6 @@
         console.log("MFO3 [AutoFenris]: Obserwator zainicjalizowany poprawnie.");
     };
 
-    // Odpalamy dopiero, gdy struktura DOM jest w pełni gotowa
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', inicjalizujObserwator);
     } else {
