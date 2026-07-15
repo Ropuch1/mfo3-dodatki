@@ -52,7 +52,8 @@
   "settings": [
     { "id": "s_link", "label": "Link MP3 (Przegrana)", "default": "" }
   ]
-}
+},
+     { "id": "fenris", "name": "Fastfenris", "file": "fenris.js" }
     
   ]
 }
