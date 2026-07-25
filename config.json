@@ -1,6 +1,7 @@
 {
   "modules": [
     { "id": "wasd", "name": "Sterowanie WASD", "file": "wasd.js" },
+    { "id": "fenris", "name": "Fenris FX", "file": "fenris.js" },
     { 
       "id": "heal", 
       "name": "Leczenie", 
