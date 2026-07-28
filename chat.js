@@ -1,8 +1,11 @@
 (function() {
     'use strict';
 
-    // Jeśli czat już istnieje na stronie, nie twórz go drugi raz
-    if (document.getElementById('tm-discord-chat')) return;
+    // Jeśli czat już istnieje, usuwamy go, aby stworzyć nowy (przydatne przy ponownym wklejaniu w konsolę)
+    const existingChat = document.getElementById('tm-discord-chat');
+    if (existingChat) {
+        existingChat.remove();
+    }
 
     // Funkcja dynamicznie wczytująca bibliotekę Socket.IO
     function loadSocketIO(callback) {
@@ -19,6 +22,7 @@
     loadSocketIO(() => {
         const SERVER_URL = 'https://van-educated-geo-occasion.trycloudflare.com';
         let PLAYER_NAME = localStorage.getItem('tm_discord_chat_nick') || 'Ropuch';
+        let PLAYER_COLOR = localStorage.getItem('tm_discord_chat_color') || '#e67e22'; // Zapisany/Domyślny kolor
 
         const savedPos = JSON.parse(localStorage.getItem('tm_discord_chat_pos') || 'null');
         const savedCollapsed = localStorage.getItem('tm_discord_chat_collapsed') === 'true';
@@ -90,6 +94,15 @@
                 }
                 .tm-btn-icon:hover {
                     opacity: 0.7;
+                }
+                #tm-color-picker {
+                    width: 22px;
+                    height: 22px;
+                    border: none;
+                    background: none;
+                    cursor: pointer;
+                    padding: 0;
+                    border-radius: 50%;
                 }
                 #tm-chat-messages {
                     flex: 1;
@@ -170,6 +183,7 @@
                 <span>Czat Discord</span>
                 <div class="tm-header-right">
                     <span id="tm-chat-status" style="font-size: 10px; opacity: 0.8;">Łączenie...</span>
+                    <input type="color" id="tm-color-picker" value="${PLAYER_COLOR}" title="Kliknij, aby zmienić kolor nicku">
                     <span id="tm-chat-settings" class="tm-btn-icon" title="Zmień swój nick">⚙️</span>
                     <span id="tm-chat-toggle" class="tm-btn-icon" title="Zwiń / Rozwiń">${savedCollapsed ? '➕' : '➖'}</span>
                 </div>
@@ -194,8 +208,15 @@
         const sendBtn = document.getElementById('tm-chat-send');
         const statusSpan = document.getElementById('tm-chat-status');
         const settingsBtn = document.getElementById('tm-chat-settings');
+        const colorPicker = document.getElementById('tm-color-picker');
         const toggleBtn = document.getElementById('tm-chat-toggle');
         const header = document.getElementById('tm-chat-header');
+
+        // Wybór i zapisywanie koloru
+        colorPicker.addEventListener('input', (e) => {
+            PLAYER_COLOR = e.target.value;
+            localStorage.setItem('tm_discord_chat_color', PLAYER_COLOR);
+        });
 
         // Zwijanie / Rozwijanie
         let isCollapsed = savedCollapsed;
@@ -212,7 +233,7 @@
         let offsetX = 0, offsetY = 0;
 
         header.addEventListener('mousedown', (e) => {
-            if (e.target.classList.contains('tm-btn-icon')) return;
+            if (e.target.classList.contains('tm-btn-icon') || e.target.id === 'tm-color-picker') return;
             isDragging = true;
             const rect = chatContainer.getBoundingClientRect();
             offsetX = e.clientX - rect.left;
@@ -251,7 +272,7 @@
             }
         });
 
-        // Renderowanie wiadomości
+        // Renderowanie wiadomości z odpowiednim kolorem
         function renderMessage(author, content, color, timestamp = Date.now()) {
             const timeStr = new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             const msgDiv = document.createElement('div');
@@ -285,11 +306,11 @@
             statusSpan.style.color = '#e74c3c';
         });
 
-        // Historia
+        // Historia wiadomości
         socket.on('chatHistory', (history) => {
             messagesDiv.innerHTML = '';
             history.forEach(msg => {
-                renderMessage(msg.author, msg.content, msg.color, msg.timestamp);
+                renderMessage(msg.author, msg.content, msg.color || '#5865F2', msg.timestamp);
             });
         });
 
@@ -298,12 +319,13 @@
             renderMessage(data.author, data.content, data.color || '#5865F2', data.timestamp);
         });
 
-        // Funkcje wysyłania wiadomości
+        // Wysyłanie wiadomości wraz z kolorem
         function sendCustomText(text) {
             if (!text.trim()) return;
             socket.emit('gameMessage', {
                 author: PLAYER_NAME,
-                content: text.trim()
+                content: text.trim(),
+                color: PLAYER_COLOR
             });
         }
 
@@ -314,7 +336,7 @@
             input.value = '';
         }
 
-        // Obsługa szybkiego paska przycisków
+        // Przyciski szybkiego dostępu
         document.getElementById('tm-btn-ide').onclick = () => sendCustomText("ide");
         document.getElementById('tm-btn-hydraulik').onclick = () => sendCustomText("ile jeszcze tego gnoju");
 
