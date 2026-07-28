@@ -20,7 +20,7 @@
     }
 
     loadSocketIO(() => {
-        const SERVER_URL = 'http://eve112.mikrus.xyz:20112/';
+        const SERVER_URL = 'https://czat.srv71.mikr.us/';
         let PLAYER_NAME = localStorage.getItem('tm_discord_chat_nick') || 'Ropuch';
         let PLAYER_COLOR = localStorage.getItem('tm_discord_chat_color') || '#e67e22'; // Zapisany/Domyślny kolor
 
