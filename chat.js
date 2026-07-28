@@ -45,7 +45,7 @@
                 #tm-discord-chat {
                     position: fixed;
                     width: 320px;
-                    height: 380px;
+                    height: 410px;
                     background: #1e1e2e;
                     border: 2px solid #5865F2;
                     border-radius: 10px;
@@ -63,6 +63,7 @@
                     height: auto !important;
                 }
                 #tm-discord-chat.tm-collapsed #tm-chat-messages,
+                #tm-discord-chat.tm-collapsed #tm-quick-bar,
                 #tm-discord-chat.tm-collapsed #tm-chat-input-box {
                     display: none !important;
                 }
@@ -111,9 +112,35 @@
                 .tm-author {
                     font-weight: bold;
                 }
+                #tm-quick-bar {
+                    display: flex;
+                    gap: 6px;
+                    padding: 6px 10px;
+                    background: #181825;
+                    border-top: 1px solid #333;
+                }
+                .tm-quick-btn {
+                    border: none;
+                    color: white;
+                    padding: 4px 8px;
+                    border-radius: 4px;
+                    cursor: pointer;
+                    font-weight: bold;
+                    font-size: 11px;
+                    transition: opacity 0.2s;
+                }
+                .tm-quick-btn:hover {
+                    opacity: 0.8;
+                }
+                #tm-btn-ide {
+                    background: #2980b9;
+                }
+                #tm-btn-hydraulik {
+                    background: #5d4037;
+                }
                 #tm-chat-input-box {
                     display: flex;
-                    border-top: 1px solid #333;
+                    border-top: 1px solid #222;
                 }
                 #tm-chat-input {
                     flex: 1;
@@ -148,6 +175,12 @@
                 </div>
             </div>
             <div id="tm-chat-messages"></div>
+            
+            <div id="tm-quick-bar">
+                <button id="tm-btn-ide" class="tm-quick-btn">ide</button>
+                <button id="tm-btn-hydraulik" class="tm-quick-btn">hydraulik</button>
+            </div>
+
             <div id="tm-chat-input-box">
                 <input type="text" id="tm-chat-input" placeholder="Napisz coś..." tabindex="-1" />
                 <button id="tm-chat-send">Wyślij</button>
@@ -265,22 +298,29 @@
             renderMessage(data.author, data.content, data.color || '#5865F2', data.timestamp);
         });
 
-        // Wysyłanie
-        function sendMessage() {
-            const text = input.value.trim();
-            if (!text) return;
-
+        // Funkcje wysyłania wiadomości
+        function sendCustomText(text) {
+            if (!text.trim()) return;
             socket.emit('gameMessage', {
                 author: PLAYER_NAME,
-                content: text
+                content: text.trim()
             });
+        }
 
+        function sendMessageFromInput() {
+            const text = input.value;
+            if (!text.trim()) return;
+            sendCustomText(text);
             input.value = '';
         }
 
-        sendBtn.addEventListener('click', sendMessage);
+        // Obsługa szybkiego paska przycisków
+        document.getElementById('tm-btn-ide').onclick = () => sendCustomText("ide");
+        document.getElementById('tm-btn-hydraulik').onclick = () => sendCustomText("ile jeszcze tego gnoju");
+
+        sendBtn.addEventListener('click', sendMessageFromInput);
         input.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') sendMessage();
+            if (e.key === 'Enter') sendMessageFromInput();
         });
     });
 })();
