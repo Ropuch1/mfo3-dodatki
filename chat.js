@@ -20,7 +20,7 @@
     }
 
     loadSocketIO(() => {
-        const SERVER_URL = 'https://petroleum-adams-need-organizational.trycloudflare.com';
+        const SERVER_URL = 'https://eve112.mikrus.xyz:20112';
         let PLAYER_NAME = localStorage.getItem('tm_discord_chat_nick') || 'Ropuch';
         let PLAYER_COLOR = localStorage.getItem('tm_discord_chat_color') || '#e67e22'; // Zapisany/Domyślny kolor
 
