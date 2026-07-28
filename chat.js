@@ -1,263 +1,286 @@
 (function() {
     'use strict';
 
-    // --- KONFIGURACJA ---
-    const dbURL = "https://lootlogmfo-default-rtdb.europe-west1.firebasedatabase.app/";
-    const chatURL = dbURL + "global_chat.json";
-    const onlineURL = dbURL + "online_users"; 
-    const APP_SECRET = "MFO3_PANEL_ROP_9";
-    const ANN_MARKER = "\u200B"; 
+    // Jeśli czat już istnieje na stronie, nie twórz go drugi raz
+    if (document.getElementById('tm-discord-chat')) return;
 
-    let hasCalledForHelp = false;
-    let isAFK = false;
-    let afkTimer;
-    let isClosedByUser = false; 
-
-    // --- LOGIKA AFK ---
-    const resetAFK = () => {
-        isAFK = false;
-        clearTimeout(afkTimer);
-        afkTimer = setTimeout(() => { isAFK = true; }, 300000);
-    };
-    window.addEventListener('mousemove', resetAFK);
-    window.addEventListener('keydown', resetAFK);
-    resetAFK();
-
-    // --- STYLE ---
-    const style = document.createElement('style');
-    style.innerHTML = `
-        #mfo3-chat-ui {
-            position: fixed; z-index: 999999; background: rgba(20, 20, 20, 0.95);
-            color: #f0f0f0; padding: 8px; border: 2px solid #e67e22;
-            border-radius: 8px; font-family: Arial, sans-serif;
-            box-shadow: 0 0 15px #000; display: flex; flex-direction: column;
-            box-sizing: border-box; min-width: 300px;
-            max-width: 98vw; max-height: 98vh;
-            resize: both; overflow: hidden;
+    // Funkcja dynamicznie wczytująca bibliotekę Socket.IO
+    function loadSocketIO(callback) {
+        if (typeof io !== 'undefined') {
+            callback();
+            return;
         }
-        #mfo3-chat-ui.minimized { height: 34px !important; min-height: 34px !important; resize: none !important; }
-        #pinned-container { display: flex; flex-direction: column; gap: 4px; margin: 5px 0; padding: 2px 0; max-height: 100px; overflow-y: auto; flex-shrink: 0; }
-        .pinned-msg { background: rgba(230, 126, 34, 0.2); border-left: 3px solid #e67e22; padding: 5px 8px; font-size: 11px; color: #ffcc00; border-radius: 2px; line-height: 1.3; word-wrap: break-word; }
-        .pinned-time { color: rgba(255, 204, 0, 0.6); font-size: 9px; margin-right: 4px; }
-        #global-msg-container { flex-grow: 1; overflow-y: auto; background: #000; padding: 8px; margin-bottom: 5px; font-size: 11px; border: 1px solid #333; scroll-behavior: smooth; }
-        #input-wrapper { display: flex; gap: 4px; width: 100%; align-items: stretch; flex-shrink: 0; }
-        #global-input { flex-grow: 1; background: #222; border: 1px solid #e67e22; color: white; padding: 6px; border-radius: 3px; outline: none; font-size: 12px; min-width: 0; }
-        .action-btn { border: none; color: white; padding: 0 8px; border-radius: 3px; cursor: pointer; font-weight: bold; font-size: 11px; }
-        #quick-ide-btn { background: #2980b9; }
-        #hydraulik-btn { background: #5d4037; }
-        #announcement-btn { background: #c0392b; }
-        #send-btn { background: #e67e22; }
-        .msg-announcement { background: rgba(192, 57, 43, 0.2) !important; border: 1px solid #c0392b !important; padding: 5px !important; border-radius: 4px; animation: pulse-red 2s infinite; }
-        @keyframes pulse-red { 0% { border-color: #c0392b; } 50% { border-color: #ff4d4d; } 100% { border-color: #c0392b; } }
-        .chat-btn { cursor: pointer; margin-left: 8px; font-weight: bold; font-size: 14px; }
-        #online-indicator { cursor: pointer; color: #2ecc71; font-size: 11px; font-weight: bold; margin-right: 10px; position: relative; }
-        #online-indicator:hover::after { content: attr(data-online-list); position: absolute; right: 0; top: 22px; background: #1a1a1a; border: 1px solid #e67e22; padding: 8px; border-radius: 4px; white-space: pre; z-index: 1000001; font-size: 11px; color: #fff; box-shadow: 0 4px 12px #000; min-width: 120px; }
-    `;
-    document.head.appendChild(style);
-
-    // --- INICJALIZACJA UI ---
-    const settings = JSON.parse(localStorage.getItem('mfo3_chat_v6')) || {
-        top: 300, left: 10, width: 320, height: 250, minimized: false
-    };
-
-    const ui = document.createElement('div');
-    ui.id = "mfo3-chat-ui";
-    if (settings.minimized) ui.classList.add('minimized');
-    ui.style.top = settings.top + "px";
-    ui.style.left = settings.left + "px";
-    ui.style.width = settings.width + "px";
-    if (!settings.minimized) ui.style.height = settings.height + "px";
-
-    ui.innerHTML = `
-        <div id="chat-header" style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #e67e22; padding-bottom:4px; cursor:move; flex-shrink:0; height:18px;">
-            <b style="color:#e67e22; font-size:11px; pointer-events:none;">GLOBAL CHAT</b>
-            <div style="display:flex; align-items:center;">
-                <span id="online-indicator" data-online-list="Ładowanie...">● Online</span>
-                <span id="toggle-chat" class="chat-btn">${settings.minimized ? '▢' : '_'}</span>
-                <span id="close-chat" class="chat-btn">&times;</span>
-            </div>
-        </div>
-        <div id="pinned-container"></div>
-        <div id="global-msg-container"></div>
-        <div id="input-wrapper">
-            <button id="quick-ide-btn" class="action-btn">ide</button>
-            <button id="hydraulik-btn" class="action-btn">hydraulik</button>
-            <button id="announcement-btn" class="action-btn">📢</button>
-            <input id="global-input" type="text" placeholder="Napisz..." maxlength="200">
-            <button id="send-btn" class="action-btn">➤</button>
-        </div>
-    `;
-
-    const container = ui.querySelector('#global-msg-container');
-    const pinnedContainer = ui.querySelector('#pinned-container');
-    const input = ui.querySelector('#global-input');
-    const sendBtn = ui.querySelector('#send-btn');
-    const onlineSign = ui.querySelector('#online-indicator');
-
-    // --- FUNKCJE POMOCNICZE ---
-    const saveSettings = () => {
-        const isMin = ui.classList.contains('minimized');
-        const oldData = JSON.parse(localStorage.getItem('mfo3_chat_v6')) || {};
-        localStorage.setItem('mfo3_chat_v6', JSON.stringify({
-            top: parseInt(ui.style.top),
-            left: parseInt(ui.style.left),
-            width: ui.offsetWidth,
-            height: isMin ? (oldData.height || 250) : ui.offsetHeight,
-            minimized: isMin
-        }));
-    };
-
-    const getMyNick = () => {
-        const nickElement = document.querySelector('.PlayerInfo .name .profile');
-        return nickElement ? nickElement.innerText.trim() : "Dupa Murzyna";
-    };
-
-    // --- KOMUNIKACJA Z FIREBASE ---
-    async function sendMessage(text, isAnnouncement = false) {
-        if (!text.trim()) return;
-        const finalMsg = isAnnouncement ? ANN_MARKER + text : text;
-        try {
-            await fetch(chatURL, {
-                method: 'POST',
-                body: JSON.stringify({ 
-                    nick: getMyNick(), 
-                    msg: finalMsg, 
-                    time: { ".sv": "timestamp" },
-                    app_secret: APP_SECRET 
-                })
-            });
-            input.value = "";
-            fetchMessages();
-        } catch (err) { }
+        const script = document.createElement('script');
+        script.src = 'https://cdn.socket.io/4.7.2/socket.io.min.js';
+        script.onload = callback;
+        document.head.appendChild(script);
     }
 
-    async function fetchMessages() {
-        if (document.hidden || isAFK || ui.classList.contains('minimized')) return;
-        try {
-            const response = await fetch(`${chatURL}?orderBy="$key"&limitToLast=50`);
-            const data = await response.json();
-            if (!data) return;
-            
-            container.innerHTML = ""; 
-            const announcements = {}; 
-            const now = Date.now();
+    loadSocketIO(() => {
+        const SERVER_URL = 'https://van-educated-geo-occasion.trycloudflare.com';
+        let PLAYER_NAME = localStorage.getItem('tm_discord_chat_nick') || 'Ropuch';
 
-            Object.keys(data).forEach(id => {
-                const m = data[id];
-                const d = new Date(m.time);
-                const isAnn = m.msg.startsWith(ANN_MARKER) || m.msg.startsWith("[OGŁOSZENIE]");
-                const cleanMsg = m.msg.replace(ANN_MARKER, "").replace("[OGŁOSZENIE]", "").trim();
-                
-                const div = document.createElement('div');
-                div.style.cssText = "margin-bottom:6px; font-size:11px; word-wrap:break-word;";
-                if (isAnn) {
-                    div.classList.add('msg-announcement');
-                    if (now - m.time < 3600000) announcements[m.nick] = { msg: cleanMsg, time: d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) };
+        const savedPos = JSON.parse(localStorage.getItem('tm_discord_chat_pos') || 'null');
+        const savedCollapsed = localStorage.getItem('tm_discord_chat_collapsed') === 'true';
+
+        const chatContainer = document.createElement('div');
+        chatContainer.id = 'tm-discord-chat';
+
+        if (savedPos && savedPos.left !== undefined && savedPos.top !== undefined) {
+            chatContainer.style.left = savedPos.left + 'px';
+            chatContainer.style.top = savedPos.top + 'px';
+            chatContainer.style.right = 'auto';
+            chatContainer.style.bottom = 'auto';
+        } else {
+            chatContainer.style.bottom = '20px';
+            chatContainer.style.right = '20px';
+        }
+
+        if (savedCollapsed) {
+            chatContainer.classList.add('tm-collapsed');
+        }
+
+        chatContainer.innerHTML = `
+            <style>
+                #tm-discord-chat {
+                    position: fixed;
+                    width: 320px;
+                    height: 380px;
+                    background: #1e1e2e;
+                    border: 2px solid #5865F2;
+                    border-radius: 10px;
+                    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+                    color: white;
+                    font-family: Arial, sans-serif;
+                    display: flex;
+                    flex-direction: column;
+                    z-index: 999999;
+                    font-size: 13px;
+                    user-select: none;
+                    box-sizing: border-box;
                 }
-                div.innerHTML = `<span style="color:#777; font-size:10px;">[${d.toLocaleTimeString()}]</span> <b style="color:#f1c40f">${m.nick}:</b> <span style="color:#eee">${cleanMsg}</span>`;
-                container.appendChild(div);
+                #tm-discord-chat.tm-collapsed {
+                    height: auto !important;
+                }
+                #tm-discord-chat.tm-collapsed #tm-chat-messages,
+                #tm-discord-chat.tm-collapsed #tm-chat-input-box {
+                    display: none !important;
+                }
+                #tm-chat-header {
+                    background: #5865F2;
+                    padding: 8px 12px;
+                    font-weight: bold;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    border-radius: 8px 8px 0 0;
+                    cursor: move;
+                }
+                .tm-header-right {
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                }
+                .tm-btn-icon {
+                    cursor: pointer;
+                    font-size: 13px;
+                    user-select: none;
+                    transition: opacity 0.2s;
+                }
+                .tm-btn-icon:hover {
+                    opacity: 0.7;
+                }
+                #tm-chat-messages {
+                    flex: 1;
+                    padding: 10px;
+                    overflow-y: auto;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 6px;
+                    user-select: text;
+                }
+                .tm-msg {
+                    word-break: break-word;
+                    line-height: 1.3;
+                }
+                .tm-time {
+                    opacity: 0.5;
+                    font-size: 10px;
+                    margin-right: 4px;
+                }
+                .tm-author {
+                    font-weight: bold;
+                }
+                #tm-chat-input-box {
+                    display: flex;
+                    border-top: 1px solid #333;
+                }
+                #tm-chat-input {
+                    flex: 1;
+                    padding: 8px 10px;
+                    border: none;
+                    background: #2b2b3b;
+                    color: white;
+                    outline: none;
+                    border-bottom-left-radius: 8px;
+                    user-select: text;
+                }
+                #tm-chat-send {
+                    padding: 8px 12px;
+                    background: #5865F2;
+                    color: white;
+                    border: none;
+                    cursor: pointer;
+                    border-bottom-right-radius: 8px;
+                    font-weight: bold;
+                }
+                #tm-chat-send:hover {
+                    background: #4752c4;
+                }
+            </style>
+
+            <div id="tm-chat-header">
+                <span>Czat Discord</span>
+                <div class="tm-header-right">
+                    <span id="tm-chat-status" style="font-size: 10px; opacity: 0.8;">Łączenie...</span>
+                    <span id="tm-chat-settings" class="tm-btn-icon" title="Zmień swój nick">⚙️</span>
+                    <span id="tm-chat-toggle" class="tm-btn-icon" title="Zwiń / Rozwiń">${savedCollapsed ? '➕' : '➖'}</span>
+                </div>
+            </div>
+            <div id="tm-chat-messages"></div>
+            <div id="tm-chat-input-box">
+                <input type="text" id="tm-chat-input" placeholder="Napisz coś..." tabindex="-1" />
+                <button id="tm-chat-send">Wyślij</button>
+            </div>
+        `;
+
+        document.body.appendChild(chatContainer);
+
+        const messagesDiv = document.getElementById('tm-chat-messages');
+        const input = document.getElementById('tm-chat-input');
+        const sendBtn = document.getElementById('tm-chat-send');
+        const statusSpan = document.getElementById('tm-chat-status');
+        const settingsBtn = document.getElementById('tm-chat-settings');
+        const toggleBtn = document.getElementById('tm-chat-toggle');
+        const header = document.getElementById('tm-chat-header');
+
+        // Zwijanie / Rozwijanie
+        let isCollapsed = savedCollapsed;
+        toggleBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            isCollapsed = !isCollapsed;
+            chatContainer.classList.toggle('tm-collapsed', isCollapsed);
+            toggleBtn.innerText = isCollapsed ? '➕' : '➖';
+            localStorage.setItem('tm_discord_chat_collapsed', isCollapsed);
+        });
+
+        // Przesuwanie okna
+        let isDragging = false;
+        let offsetX = 0, offsetY = 0;
+
+        header.addEventListener('mousedown', (e) => {
+            if (e.target.classList.contains('tm-btn-icon')) return;
+            isDragging = true;
+            const rect = chatContainer.getBoundingClientRect();
+            offsetX = e.clientX - rect.left;
+            offsetY = e.clientY - rect.top;
+
+            chatContainer.style.right = 'auto';
+            chatContainer.style.bottom = 'auto';
+            chatContainer.style.left = rect.left + 'px';
+            chatContainer.style.top = rect.top + 'px';
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+
+            let newX = e.clientX - offsetX;
+            let newY = e.clientY - offsetY;
+
+            const winWidth = window.innerWidth;
+            const winHeight = window.innerHeight;
+            const rect = chatContainer.getBoundingClientRect();
+
+            if (newX < 0) newX = 0;
+            if (newY < 0) newY = 0;
+            if (newX + rect.width > winWidth) newX = winWidth - rect.width;
+            if (newY + rect.height > winHeight) newY = winHeight - rect.height;
+
+            chatContainer.style.left = newX + 'px';
+            chatContainer.style.top = newY + 'px';
+        });
+
+        document.addEventListener('mouseup', () => {
+            if (isDragging) {
+                isDragging = false;
+                const rect = chatContainer.getBoundingClientRect();
+                localStorage.setItem('tm_discord_chat_pos', JSON.stringify({ left: rect.left, top: rect.top }));
+            }
+        });
+
+        // Renderowanie wiadomości
+        function renderMessage(author, content, color, timestamp = Date.now()) {
+            const timeStr = new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const msgDiv = document.createElement('div');
+            msgDiv.className = 'tm-msg';
+            msgDiv.innerHTML = `<span class="tm-time">[${timeStr}]</span><span class="tm-author" style="color:${color}">${author}:</span> ${content}`;
+            messagesDiv.appendChild(msgDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        const socket = io(SERVER_URL);
+
+        // Zmiana nicku
+        settingsBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const newNick = prompt("Podaj nowy nick, który będzie widoczny w czacie:", PLAYER_NAME);
+            if (newNick && newNick.trim() !== "") {
+                PLAYER_NAME = newNick.trim();
+                localStorage.setItem('tm_discord_chat_nick', PLAYER_NAME);
+                renderMessage('System', `Twój nick został zmieniony na: ${PLAYER_NAME}`, '#f1c40f');
+            }
+        });
+
+        // Status połączenia
+        socket.on('connect', () => {
+            statusSpan.innerText = 'ONLINE';
+            statusSpan.style.color = '#2ecc71';
+        });
+
+        socket.on('disconnect', () => {
+            statusSpan.innerText = 'OFFLINE';
+            statusSpan.style.color = '#e74c3c';
+        });
+
+        // Historia
+        socket.on('chatHistory', (history) => {
+            messagesDiv.innerHTML = '';
+            history.forEach(msg => {
+                renderMessage(msg.author, msg.content, msg.color, msg.timestamp);
+            });
+        });
+
+        // Wiadomości na żywo
+        socket.on('discordMessage', (data) => {
+            renderMessage(data.author, data.content, data.color || '#5865F2', data.timestamp);
+        });
+
+        // Wysyłanie
+        function sendMessage() {
+            const text = input.value.trim();
+            if (!text) return;
+
+            socket.emit('gameMessage', {
+                author: PLAYER_NAME,
+                content: text
             });
 
-            pinnedContainer.innerHTML = "";
-            Object.keys(announcements).forEach(nick => {
-                const p = document.createElement('div');
-                p.className = 'pinned-msg';
-                p.innerHTML = `<span class="pinned-time">[${announcements[nick].time}]</span> 📌 <b>${nick}:</b> ${announcements[nick].msg}`;
-                pinnedContainer.appendChild(p);
-            });
-            pinnedContainer.style.display = Object.keys(announcements).length > 0 ? "flex" : "none";
-            container.scrollTop = container.scrollHeight;
-        } catch (err) { }
-    }
-
-    // --- OBSŁUGA ZDARZEŃ UI ---
-    ui.querySelector('#quick-ide-btn').onclick = () => sendMessage("ide");
-    ui.querySelector('#hydraulik-btn').onclick = () => sendMessage("ile jeszcze tego gnoju");
-    ui.querySelector('#announcement-btn').onclick = () => { if(input.value.trim()) sendMessage(input.value, true); };
-    sendBtn.onclick = () => sendMessage(input.value);
-    input.onkeypress = (e) => { if (e.key === 'Enter') sendMessage(input.value); };
-
-    ui.querySelector('#toggle-chat').onclick = function() {
-        const isMin = ui.classList.toggle('minimized');
-        this.innerText = isMin ? '▢' : '_';
-        if (isMin) ui.style.height = "34px";
-        else {
-            const saved = JSON.parse(localStorage.getItem('mfo3_chat_v6'));
-            ui.style.height = (saved ? saved.height : 250) + "px";
+            input.value = '';
         }
-        saveSettings();
-        if (!isMin) fetchMessages();
-    };
 
-    ui.querySelector('#close-chat').onclick = () => { isClosedByUser = true; ui.remove(); };
-
-    // Drag & Drop
-    let isDragging = false, oL, oT;
-    ui.addEventListener('mousedown', (e) => { 
-        if (e.target.id === 'chat-header') { 
-            isDragging = true; 
-            oL = e.clientX - ui.offsetLeft; oT = e.clientY - ui.offsetTop; 
-        } 
+        sendBtn.addEventListener('click', sendMessage);
+        input.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendMessage();
+        });
     });
-    document.addEventListener('mousemove', (e) => { 
-        if (isDragging) { 
-            ui.style.left = Math.max(0, Math.min(e.clientX - oL, window.innerWidth - ui.offsetWidth)) + 'px'; 
-            ui.style.top = Math.max(0, Math.min(e.clientY - oT, window.innerHeight - ui.offsetHeight)) + 'px';
-        } 
-    });
-    document.addEventListener('mouseup', () => { if (isDragging) { isDragging = false; saveSettings(); } });
-
-    new ResizeObserver(() => { if (!ui.classList.contains('minimized')) saveSettings(); }).observe(ui);
-
-    // --- SYSTEM OBECNOŚCI ---
-    async function updatePresence() {
-        if (document.hidden) return;
-        try { await fetch(`${onlineURL}/${getMyNick()}.json`, { method: 'PUT', body: JSON.stringify({ lastActive: { ".sv": "timestamp" }, app_secret: APP_SECRET }) }); } catch (e) { }
-    }
-
-    async function fetchOnlineUsers() {
-        if (document.hidden || isAFK) return;
-        try {
-            const response = await fetch(`${onlineURL}.json`);
-            const data = await response.json();
-            if (!data) return;
-            const now = Date.now();
-            let onlineList = Object.keys(data).filter(nick => now - data[nick].lastActive < 45000);
-            onlineSign.innerText = `● ${onlineList.length}`;
-            onlineSign.setAttribute('data-online-list', "Gracze online:\n" + onlineList.join('\n'));
-        } catch (e) { }
-    }
-
-    // --- STRAŻNIK CZATU (Naprawa zamykania przy zmianie mapy) ---
-    const maintainUI = () => {
-        if (!isClosedByUser && !document.getElementById('mfo3-chat-ui')) {
-            document.documentElement.appendChild(ui); // Wstrzykujemy do HTML (wyżej niż body)
-        }
-    };
-
-    // --- SYSTEM WYKRYWANIA WALKI (MutationObserver) ---
-    let isInBattle = false;
-    const battleObserver = new MutationObserver(() => {
-        const battleMenuExists = document.querySelector('.BattleMenu') !== null;
-        if (battleMenuExists && !isInBattle) {
-            isInBattle = true;
-            console.log("Walka rozpoczęta");
-        } else if (!battleMenuExists && isInBattle) {
-            isInBattle = false;
-            hasCalledForHelp = false; 
-            console.log("Walka zakończona");
-        }
-    });
-    battleObserver.observe(document.documentElement, { childList: true, subtree: true });
-
-    // --- START ---
-    setInterval(maintainUI, 500); // Pilnuj obecności okna co 0.5s
-    setInterval(fetchMessages, 4000);
-    setInterval(updatePresence, 30000);
-    setInterval(fetchOnlineUsers, 10000);
-
-    maintainUI();
-    fetchMessages(); 
-    updatePresence(); 
-    fetchOnlineUsers();
 })();
