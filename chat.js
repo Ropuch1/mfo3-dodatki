@@ -1,28 +1,15 @@
 (function() {
     'use strict';
 
-    // Jeśli czat już istnieje, usuwamy go, aby stworzyć nowy (przydatne przy ponownym wklejaniu w konsolę)
     const existingChat = document.getElementById('tm-discord-chat');
     if (existingChat) {
         existingChat.remove();
     }
 
-    // Funkcja dynamicznie wczytująca bibliotekę Socket.IO
-    function loadSocketIO(callback) {
-        if (typeof io !== 'undefined') {
-            callback();
-            return;
-        }
-        const script = document.createElement('script');
-        script.src = 'https://cdn.socket.io/4.7.2/socket.io.min.js';
-        script.onload = callback;
-        document.head.appendChild(script);
-    }
-
-    loadSocketIO(() => {
-        const SERVER_URL = 'http://srv71.mikr.us:20112/';
+    function initChat() {
+        const SERVER_URL = 'https://mfo3chat.tojest.dev';
         let PLAYER_NAME = localStorage.getItem('tm_discord_chat_nick') || 'Ropuch';
-        let PLAYER_COLOR = localStorage.getItem('tm_discord_chat_color') || '#e67e22'; // Zapisany/Domyślny kolor
+        let PLAYER_COLOR = localStorage.getItem('tm_discord_chat_color') || '#e67e22';
 
         const savedPos = JSON.parse(localStorage.getItem('tm_discord_chat_pos') || 'null');
         const savedCollapsed = localStorage.getItem('tm_discord_chat_collapsed') === 'true';
@@ -196,7 +183,7 @@
             </div>
 
             <div id="tm-chat-input-box">
-                <input type="text" id="tm-chat-input" placeholder="Napisz coś..." tabindex="-1" />
+                <input type="text" id="tm-chat-input" placeholder="Napisz coś..." />
                 <button id="tm-chat-send">Wyślij</button>
             </div>
         `;
@@ -211,6 +198,13 @@
         const colorPicker = document.getElementById('tm-color-picker');
         const toggleBtn = document.getElementById('tm-chat-toggle');
         const header = document.getElementById('tm-chat-header');
+
+        // Blokada przechwytywania klawiszy przez grę
+        ['keydown', 'keyup', 'keypress'].forEach(eventType => {
+            input.addEventListener(eventType, (e) => {
+                e.stopPropagation();
+            });
+        });
 
         // Wybór i zapisywanie koloru
         colorPicker.addEventListener('input', (e) => {
@@ -272,17 +266,31 @@
             }
         });
 
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str).replace(/[&<>"']/g, function(m) {
+                return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
+            });
+        }
+
         // Renderowanie wiadomości z odpowiednim kolorem
         function renderMessage(author, content, color, timestamp = Date.now()) {
             const timeStr = new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             const msgDiv = document.createElement('div');
             msgDiv.className = 'tm-msg';
-            msgDiv.innerHTML = `<span class="tm-time">[${timeStr}]</span><span class="tm-author" style="color:${color}">${author}:</span> ${content}`;
+            msgDiv.innerHTML = `<span class="tm-time">[${timeStr}]</span><span class="tm-author" style="color:${color}">${escapeHtml(author)}:</span> ${escapeHtml(content)}`;
             messagesDiv.appendChild(msgDiv);
             messagesDiv.scrollTop = messagesDiv.scrollHeight;
         }
 
-        const socket = io(SERVER_URL);
+        // Połączenie z serwerem
+        const socket = (typeof io !== 'undefined') ? io(SERVER_URL) : null;
+
+        if (!socket) {
+            statusSpan.innerText = 'BŁĄD IO';
+            statusSpan.style.color = '#e74c3c';
+            return;
+        }
 
         // Zmiana nicku
         settingsBtn.addEventListener('click', (e) => {
@@ -309,9 +317,11 @@
         // Historia wiadomości
         socket.on('chatHistory', (history) => {
             messagesDiv.innerHTML = '';
-            history.forEach(msg => {
-                renderMessage(msg.author, msg.content, msg.color || '#5865F2', msg.timestamp);
-            });
+            if (Array.isArray(history)) {
+                history.forEach(msg => {
+                    renderMessage(msg.author, msg.content, msg.color || '#5865F2', msg.timestamp);
+                });
+            }
         });
 
         // Wiadomości na żywo
@@ -321,7 +331,7 @@
 
         // Wysyłanie wiadomości wraz z kolorem
         function sendCustomText(text) {
-            if (!text.trim()) return;
+            if (!text || !text.trim()) return;
             socket.emit('gameMessage', {
                 author: PLAYER_NAME,
                 content: text.trim(),
@@ -341,8 +351,20 @@
         document.getElementById('tm-btn-hydraulik').onclick = () => sendCustomText("ile jeszcze tego gnoju");
 
         sendBtn.addEventListener('click', sendMessageFromInput);
-        input.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') sendMessageFromInput();
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                sendMessageFromInput();
+            }
         });
-    });
+    }
+
+    if (typeof io !== 'undefined') {
+        initChat();
+    } else {
+        const script = document.createElement('script');
+        script.src = 'https://cdn.socket.io/4.7.5/socket.io.min.js';
+        script.onload = initChat;
+        document.head.appendChild(script);
+    }
 })();
