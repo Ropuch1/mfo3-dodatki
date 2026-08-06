@@ -1,5 +1,6 @@
 {
   "modules": [
+    { "id": "roślinki", "name": "Wykrywacz kwiatkuf", "file": "kwiatki.js" },
     { "id": "wasd", "name": "Sterowanie WASD", "file": "wasd.js" },
     { "id": "fenris", "name": "Fenris FX", "file": "fenris.js" },
     { 
