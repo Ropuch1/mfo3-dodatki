@@ -4,68 +4,44 @@
     const TARGET_FILE = 'Herbs.png';
 
     // Lista 4 kwiatków eventowych:
-    // 1. Płomienna Iskra: -240px -144px
-    // 2. Szmaragdowe Serce: -336px -96px
-    // 3. Jaskółcze Ziele: 0px -120px
-    // 4. Królewski Korzeń / Kwiat: -24px -168px
     const TARGET_POSITIONS = [
-        '-240px -144px',
-        '-336px -96px',
-        '0px -120px',
-        '-24px -168px'
+        '-240px -144px', // Płomienna Iskra
+        '-336px -96px',  // Szmaragdowe Serce
+        '0px -120px',    // Jaskółcze Ziele
+        '-24px -168px'   // Królewski Korzeń / Kwiat
     ];
 
-    // Zapobieganie wielokrotnemu nakładaniu się stylów w konsoli
-    if (!document.getElementById('mfo-flower-finder-style')) {
-        const style = document.createElement('style');
-        style.id = 'mfo-flower-finder-style';
-        style.innerHTML = `
-            @keyframes mfoFlowerPulse {
-                0% {
-                    box-shadow: 0 0 14px 6px #00ff66, inset 0 0 8px #00ff66;
-                    outline: 3px solid #00ff66;
-                    transform: scale(1);
-                }
-                50% {
-                    box-shadow: 0 0 30px 14px #ff00ff, inset 0 0 12px #ff00ff;
-                    outline: 4px solid #ff00ff;
-                    transform: scale(1.25);
-                }
-                100% {
-                    box-shadow: 0 0 14px 6px #00ff66, inset 0 0 8px #00ff66;
-                    outline: 3px solid #00ff66;
-                    transform: scale(1);
-                }
-            }
+    // Czyszczenie starego stylu, jeśli kod był wcześniej uruchamiany
+    const oldStyle = document.getElementById('mfo-flower-finder-style');
+    if (oldStyle) oldStyle.remove();
 
-            .mfo-target-flower {
-                animation: mfoFlowerPulse 0.8s infinite !important;
-                border-radius: 50% !important;
-                z-index: 999999 !important;
-                overflow: visible !important;
-            }
+    // Dodanie stałego, czytelnego stylu podświetlenia
+    const style = document.createElement('style');
+    style.id = 'mfo-flower-finder-style';
+    style.innerHTML = `
+        .mfo-target-flower {
+            box-shadow: 0 0 12px 4px #00ff66, inset 0 0 6px #00ff66 !important;
+            outline: 3px solid #00ff66 !important;
+            border-radius: 50% !important;
+            z-index: 999999 !important;
+            overflow: visible !important;
+        }
 
-            .mfo-target-flower::before {
-                content: '⬇';
-                position: absolute;
-                top: -38px;
-                left: 50%;
-                transform: translateX(-50%);
-                font-size: 34px;
-                color: #00ffff;
-                font-weight: bold;
-                text-shadow: 0 0 6px #000, 0 0 12px #ff0055;
-                animation: mfoArrowBounceFlower 0.5s infinite alternate;
-                pointer-events: none;
-            }
-
-            @keyframes mfoArrowBounceFlower {
-                from { top: -42px; }
-                to { top: -26px; }
-            }
-        `;
-        document.head.appendChild(style);
-    }
+        /* Statyczna strzałka nad kwiatkiem */
+        .mfo-target-flower::before {
+            content: '⬇';
+            position: absolute;
+            top: -35px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 30px;
+            color: #00ffff;
+            font-weight: bold;
+            text-shadow: 0 0 4px #000, 0 0 8px #000;
+            pointer-events: none;
+        }
+    `;
+    document.head.appendChild(style);
 
     function scanForFlowers() {
         const elements = document.querySelectorAll('.animator-display');
@@ -88,11 +64,11 @@
         });
     }
 
-    // Czyszczenie poprzedniego interwału, jeśli uruchamiasz kod ponownie
+    // Resetowanie interwału przy ponownym wklejeniu
     if (window.mfoFlowerInterval) {
         clearInterval(window.mfoFlowerInterval);
     }
 
     window.mfoFlowerInterval = setInterval(scanForFlowers, 150);
-    console.log('[MFO3] Wykrywacz kwiatków został pomyślnie uruchomiony!');
+    
 })();
