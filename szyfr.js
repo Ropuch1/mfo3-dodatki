@@ -15,56 +15,67 @@
 
     const panel = document.createElement('div');
     panel.id = 'zamek-solver-panel';
-    panel.style.position = 'fixed';
-    panel.style.top = '10px';
-    panel.style.left = '10px';
-    panel.style.zIndex = '999999';
-    panel.style.background = 'rgba(0, 0, 0, 0.9)';
-    panel.style.color = '#00ff00';
-    panel.style.padding = '10px 14px';
-    panel.style.borderRadius = '6px';
-    panel.style.fontFamily = 'monospace';
-    panel.style.fontSize = '13px';
-    panel.style.border = '1px solid #00ff00';
+    panel.style.cssText = `
+        position: fixed;
+        top: 10px;
+        left: 10px;
+        z-index: 999999;
+        background: rgba(0, 0, 0, 0.9);
+        color: #00ff00;
+        padding: 10px 14px;
+        border-radius: 6px;
+        font-family: monospace;
+        font-size: 13px;
+        border: 1px solid #00ff00;
+        user-select: none;
+    `;
+
+    panel.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+            <b>ZAMEK SOLVER v8.5</b>
+            <span id="z-close" style="cursor:pointer; color:#ff5555; font-weight:bold; padding: 0 4px;" title="Zamknij (Ctrl+O)">[X]</span>
+        </div>
+        Pozycja: <span id="z-pos" style="color:yellow; font-weight:bold;">0</span>
+        <button id="z-reset" style="cursor:pointer; padding: 0 4px; font-weight:bold;" title="Reset do 0">0</button>
+        <button id="z-minus" style="cursor:pointer; padding: 0 5px;">-</button>
+        <button id="z-plus" style="cursor:pointer; padding: 0 5px;">+</button><br>
+        Cel (Żółty): <span id="z-target" style="color:cyan">Brak</span><br>
+        Kombinacja: <span id="z-combo" style="color:#ff00ff">Oczekiwanie...</span>
+    `;
     document.body.appendChild(panel);
 
-    function updatePanel(targetStr, comboText) {
-        panel.innerHTML = `
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                <b>ZAMEK SOLVER v8.5</b>
-                <span id="z-close" style="cursor:pointer; color:#ff5555; font-weight:bold; padding: 0 4px;" title="Zamknij (Ctrl+O)">[X]</span>
-            </div>
-            Pozycja: <span style="color:yellow; font-weight:bold;">${currentPos}</span>
-            <button id="z-reset" style="cursor:pointer; padding: 0 4px; font-weight:bold;" title="Reset do 0">0</button>
-            <button id="z-minus" style="cursor:pointer; padding: 0 5px;">-</button>
-            <button id="z-plus" style="cursor:pointer; padding: 0 5px;">+</button><br>
-            Cel (Żółty): <span style="color:cyan">${targetStr || 'Brak'}</span><br>
-            Kombinacja: <span style="color:#ff00ff">${comboText || 'Oczekiwanie...'}</span>
-        `;
+    const posEl = panel.querySelector('#z-pos');
+    const targetEl = panel.querySelector('#z-target');
+    const comboEl = panel.querySelector('#z-combo');
 
-        document.getElementById('z-close').onclick = (e) => {
-            e.stopPropagation();
-            isPanelVisible = false;
-            panel.style.display = 'none';
-        };
+    panel.querySelector('#z-close').onclick = (e) => {
+        e.stopPropagation();
+        isPanelVisible = false;
+        panel.style.display = 'none';
+    };
 
-        document.getElementById('z-reset').onclick = (e) => {
-            e.stopPropagation();
-            currentPos = 0;
-            console.log(`[ZAMEK v8.5] Ręczny reset do 0.`);
-        };
+    panel.querySelector('#z-reset').onclick = (e) => {
+        e.stopPropagation();
+        currentPos = 0;
+        posEl.textContent = currentPos;
+    };
 
-        document.getElementById('z-minus').onclick = (e) => {
-            e.stopPropagation();
-            currentPos = (currentPos - 1 + 40) % 40;
-            console.log(`[ZAMEK v8.5] Ręczna zmiana (-). Nowa pozycja: ${currentPos}`);
-        };
+    panel.querySelector('#z-minus').onclick = (e) => {
+        e.stopPropagation();
+        currentPos = (currentPos - 1 + 40) % 40;
+        posEl.textContent = currentPos;
+    };
 
-        document.getElementById('z-plus').onclick = (e) => {
-            e.stopPropagation();
-            currentPos = (currentPos + 1) % 40;
-            console.log(`[ZAMEK v8.5] Ręczna zmiana (+). Nowa pozycja: ${currentPos}`);
-        };
+    panel.querySelector('#z-plus').onclick = (e) => {
+        e.stopPropagation();
+        currentPos = (currentPos + 1) % 40;
+        posEl.textContent = currentPos;
+    };
+
+    function updatePanelDisplay(targetStr, comboText) {
+        posEl.textContent = currentPos;
+        targetEl.textContent = targetStr || 'Brak';
+        comboEl.textContent = comboText || 'Oczekiwanie...';
     }
 
     function runSolver() {
@@ -82,12 +93,8 @@
             return;
         }
 
-        if (isPanelVisible) {
-            panel.style.display = 'block';
-        } else {
-            panel.style.display = 'none';
-            return;
-        }
+        panel.style.display = isPanelVisible ? 'block' : 'none';
+        if (!isPanelVisible) return;
 
         let yellowEl = textEl.querySelector('b[style*="yellow"], b[style*="COLOR: yellow"]');
         let currentTargetStr = "";
@@ -106,14 +113,9 @@
         const targetDir = currentTargetStr[0];
         const targetVal = parseInt(currentTargetStr.substring(1), 10);
 
-        let options = [];
-        allDivs.forEach(div => {
-            if (div.classList && div.classList.contains('WUI_FancySelect_option')) {
-                options.push(div);
-            }
-        });
-
+        let options = Array.from(document.querySelectorAll('.WUI_FancySelect_option'));
         let parsedOptions = [];
+
         options.forEach((opt, index) => {
             opt.style.backgroundColor = '';
             opt.style.border = '';
@@ -148,7 +150,7 @@
         let minTotalClicks = Infinity;
 
         let v = parsedOptions.map(o => o.val);
-        while(v.length < 3) v.push(999);
+        while (v.length < 3) v.push(999);
 
         let targetDistances = [baseDistance, baseDistance + 40, baseDistance + 80];
 
@@ -178,7 +180,7 @@
             if (bestFirstElement !== null) break;
         }
 
-        updatePanel(currentTargetStr, bestComboText);
+        updatePanelDisplay(currentTargetStr, bestComboText);
 
         if (bestFirstElement !== null) {
             bestFirstElement.style.backgroundColor = 'rgba(0, 255, 0, 0.4)';
@@ -202,7 +204,7 @@
                     } else {
                         currentPos = (currentPos - stepVal + 40) % 40;
                     }
-                    console.log(`[ZAMEK v8.5] Kliknięto ${optDir}${stepVal}. Nowa pozycja: ${currentPos}`);
+                    posEl.textContent = currentPos;
                 }
             }
         }
@@ -213,7 +215,6 @@
             e.preventDefault();
             isPanelVisible = !isPanelVisible;
             panel.style.display = isPanelVisible ? 'block' : 'none';
-            console.log(`[ZAMEK v8.5] Przełączono widoczność panelu: ${isPanelVisible}`);
         }
     };
 
