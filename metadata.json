@@ -1,0 +1,50 @@
+{
+  "roślinki": {
+    "description": "Dodatek wykrywa kwiatki w pobliżu i oznacza je w celu łatwiejszego znalezienia",
+    "tags": "Wakacje"
+  },
+  "dart": {
+    "description": "Dodaje celownik z minigrze w rzutki",
+    "tags": "Wakacje"
+  },
+  "fenris": {
+    "description": "Automatyczne dawanie auto walki i zamykania walki na Fenrisie",
+    "tags": ""
+  },
+  "heal": {
+    "description": "Leczenie oraz odswieżanie pod wybranym przyciskiem",
+    "tags": ""
+  },
+  "potwory": {
+    "description": "Zmienia tryb wyświetlania potworów",
+    "tags": ""
+  },
+  "piorko": {
+    "description": "Pomaga znaleźć piórko Garudy",
+    "tags": ""
+  },
+  "dropboss": {
+    "description": "Automatycznie przeskakuje na drop z bossa w logu walki",
+    "tags": ""
+  },
+  "drop": {
+    "description": "Przeskakiwanie pomiędzy dropami w drużynie pod wybranym przyciskiem",
+    "tags": ""
+  },
+  "kill": {
+    "description": "Atakowanie mobów pod wybranym przyciskiem",
+    "tags": ""
+  },
+  "muzyka": {
+    "description": "Lekker hakken hakken hakken in de mijnen",
+    "tags": ""
+  },
+  "przegrana": {
+    "description": "Odtwarza dźwięk po przegranej walce",
+    "tags": ""
+  },
+  "szyfr": {
+    "description": "",
+    "tags": "Wakacje"
+  }
+}
