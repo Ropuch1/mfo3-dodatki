@@ -25,6 +25,8 @@
     }
 
     window.addEventListener('keydown', (e) => {
+        // Ignorujemy skrót, jeśli wciśnięto Ctrl, Alt, Shift lub Meta (pozwala na Ctrl+C, Ctrl+Shift+C itp.)
+        if (e.ctrlKey || e.altKey || e.shiftKey || e.metaKey) return;
         if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') return;
         
         const keyDrop = localStorage.getItem('mfo3_val_drop_k_drop') || 'KeyC';
