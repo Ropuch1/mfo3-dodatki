@@ -16,6 +16,58 @@
 
     window.ropuchInjectedScripts = window.ropuchInjectedScripts || {};
 
+    // --- DODATEK: Żabka w lewym górnym rogu ---
+function createLauncher() {
+    if (document.getElementById('rzap-launcher')) return;
+    const launcher = document.createElement('div');
+    launcher.id = 'rzap-launcher';
+    launcher.innerHTML = '🐸';
+    launcher.title = 'Otwórz Panel Ropucha';
+    launcher.style.cssText = `
+        position: fixed;
+        top: 15px;
+        left: 15px;
+        z-index: 999998;
+        width: 45px;
+        height: 45px;
+        background: rgba(25, 25, 25, 0.9);
+        border: 2px solid ${typeof currentAccentColor !== 'undefined' ? currentAccentColor : '#d4af37'};
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        cursor: pointer;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.7);
+        transition: 0.2s;
+        user-select: none;
+    `;
+
+    launcher.addEventListener('mouseover', () => { launcher.style.transform = 'scale(1.1)'; });
+    launcher.addEventListener('mouseout', () => { launcher.style.transform = 'scale(1)'; });
+
+    launcher.addEventListener('click', () => {
+        const panel = document.getElementById('rzap-panel');
+        if (panel) {
+            panel.style.display = panel.style.display === 'none' ? 'flex' : 'none';
+        } else {
+            if (typeof buildUI === 'function') buildUI();
+            if (typeof currentLoadedConfig !== 'undefined' && currentLoadedConfig && typeof updateModulesUI === 'function') {
+                updateModulesUI(currentLoadedConfig);
+            }
+        }
+    });
+
+    document.body.appendChild(launcher);
+}
+
+// Uruchomienie żabki po załadowaniu strony
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', createLauncher);
+} else {
+    createLauncher();
+}
+
     let lokalneOpisy = {}, lokalneTagi = {}, githubMetadata = {}, modOrder = [];
     try { lokalneOpisy = JSON.parse(localStorage.getItem('ropuch_wlasne_opisy')) || {}; } catch(e) {}
     try { lokalneTagi = JSON.parse(localStorage.getItem('ropuch_wlasne_tagi')) || {}; } catch(e) {}
