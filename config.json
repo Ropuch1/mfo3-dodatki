@@ -1,7 +1,7 @@
 {
   "modules": [
-    { "id": "roślinki", "name": "Wykrywacz kwiatkuf", "file": "kwiatki.js" },
-    { "id": "dart", "name": "Źótki (rzutki-dart)", "file": "dart.js" },
+    { "id": "roślinki", "name": "Wykrywacz kwiatków", "file": "kwiatki.js" },
+    { "id": "dart", "name": "Rzutki", "file": "dart.js" },
     { "id": "szyfr", "name": "Szyfr", "file": "szyfr.js" },
     { "id": "wasd", "name": "Sterowanie WASD", "file": "wasd.js" },
     { "id": "fenris", "name": "Fenris FX", "file": "fenris.js" },
@@ -14,12 +14,12 @@
         { "id": "k_ref", "label": "Odśwież (klawisz)", "default": "KeyR" }
       ]
     },
-    { "id": "potwory", "name": "Potwory switch (V)", "file": "potwory.js" },
-    { "id": "autof", "name": "Autof", "file": "autof.js" },
-    { "id": "portal", "name": "Portale - Bossy", "file": "portal.js" },
+    { "id": "potwory", "name": "Potwory switch", "file": "potwory.js" },
+    { "id": "autof", "name": "Auto f", "file": "autof.js" },
+    { "id": "portal", "name": "Lepsze Portal", "file": "portal.js" },
     { "id": "filtr", "name": "Wyszukiwarka EQ", "file": "filtr.js" },
     { "id": "piorko", "name": "Brak piórka cię dobija?", "file": "piorko.js" },
-    { "id": "chat", "name": "LL", "file": "chat.js" },
+    { "id": "chat", "name": "Czat", "file": "chat.js" },
     { "id": "notif", "name": "Notyfikator", "file": "notif.js" },
     { "id": "gemy", "name": "Licznik gemów", "file": "gemy.js" },
     { 
@@ -27,17 +27,17 @@
       "name": "QG", 
       "file": "grupa.js",
       "settings": [
-        { "id": "k_invite", "label": "Zaproś cwela (klawisz)", "default": "KeyZ" },
+        { "id": "k_invite", "label": "Zaproś (klawisz)", "default": "KeyZ" },
         { "id": "k_accept", "label": "Akceptuj grupę (klawisz)", "default": "Enter" }
       ]
     },
     { "id": "dropboss", "name": "DropBoss", "file": "dropboss.js" },
-    { "id": "close", "name": "Zamknij mordeeee", "file": "closex.js",
+    { "id": "close", "name": "Zamknij walkę", "file": "closex.js",
      "settings": [
          { "id": "k_close", "label": "Zamknij", "default": "KeyX" }
       ]
     },
-    { "id": "drop", "name": "DROP pod c", "file": "drop.js",
+    { "id": "drop", "name": "DROP", "file": "drop.js",
     "settings": [
          { "id": "k_drop", "label": "Przełączanie dropu", "default": "KeyC" }
       ]
