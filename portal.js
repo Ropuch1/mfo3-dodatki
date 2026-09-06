@@ -29,7 +29,6 @@
         .btn-main { padding: 8px; flex: 1; cursor: pointer; font-weight: bold; }
         .btn-sub { padding: 4px; flex: 1; cursor: pointer; font-size: 11px; }
     `;
-    // POPRAWKA: documentElement istnieje zawsze przy document-start, w przeciwieństwie do head
     document.documentElement.appendChild(style);
 
     const defaultData = [
@@ -41,7 +40,6 @@
         { map: "Podmokła Grota: Poziom 2", name: "Garuda" }
     ];
 
-    // Zamiennik GM_getValue / GM_setValue
     function getBosses() {
         const saved = localStorage.getItem("boss_config_v4");
         return saved ? JSON.parse(saved) : defaultData;
@@ -175,6 +173,8 @@
             if (mapName in mapToName) {
                 span.innerText = mapToName[mapName];
                 row.classList.add("boss-row");
+                row.classList.remove("root");
+                row.classList.add("normal");
                 rows[mapToName[mapName]] = row;
             }
         });
@@ -197,7 +197,6 @@
         if (table) processPortal(table);
     });
 
-    // POPRAWKA: Bezpieczny start - czekamy aż document.body będzie gotowy
     function startObserver() {
         if (document.body) {
             observer.observe(document.body, { childList: true, subtree: true });
