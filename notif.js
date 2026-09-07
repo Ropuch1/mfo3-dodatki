@@ -1,16 +1,36 @@
 (function() {
     'use strict';
 
-    const settings = JSON.parse(localStorage.getItem('mfo3_loot_settings')) || { 
-        top: "100px", left: "10px", minimized: false,
-        glowColor: "#ffd700", textColor: "#00ff00",
-        confettiEnabled: true,
-        soundUrl: "" 
+    // Wczytywanie ustawień z obsługą starszych wersji
+    const savedSettings = JSON.parse(localStorage.getItem('mfo3_loot_settings')) || {};
+    const settings = { 
+        top: savedSettings.top || "100px", 
+        left: savedSettings.left || "10px", 
+        minimized: savedSettings.minimized || false,
+        glowColor: savedSettings.glowColor || "#ffd700", 
+        textColor: savedSettings.textColor || "#00ff00",
+        confettiEnabled: savedSettings.confettiEnabled !== false, 
+        massiveConfetti: savedSettings.massiveConfetti || false,  
+        showJackpotText: savedSettings.showJackpotText !== false, 
+        soundUrl: savedSettings.soundUrl || "" 
     };
     
     const saveSettings = () => localStorage.setItem('mfo3_loot_settings', JSON.stringify(settings));
 
-    // Wstrzyknięcie stylów dynamicznych dla ramki (bezpieczniejsze niż bezpośrednie modyfikowanie style.outline)
+    // Ładowanie biblioteki dla "Więcej konfetti" (Canvas Confetti)
+    function loadConfettiLib() {
+        if (document.getElementById('canvas-confetti-lib')) return;
+        const script = document.createElement('script');
+        script.id = 'canvas-confetti-lib';
+        script.src = 'https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js';
+        document.head.appendChild(script);
+    }
+    
+    if (settings.massiveConfetti) {
+        loadConfettiLib();
+    }
+
+    // Wstrzyknięcie stylów dynamicznych
     const styleEl = document.createElement('style');
     styleEl.id = 'mfo-loot-styles';
     styleEl.innerHTML = `
@@ -18,6 +38,10 @@
         .mfo-loot-jackpot-glow {
             outline: 5px solid ${settings.glowColor} !important;
             box-shadow: 0 0 50px 20px ${settings.glowColor}b3 !important;
+        }
+        .upgrade-result {
+            transition: none !important;
+            animation: none !important;
         }
     `;
     document.head.appendChild(styleEl);
@@ -29,7 +53,7 @@
         background: rgba(10, 10, 10, 0.9); color: #f0f0f0;
         padding: 12px; border: 2px solid #e67e22; border-radius: 8px;
         font-family: sans-serif; font-size: 13px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.7); min-width: 160px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.7); min-width: 170px;
         cursor: default; user-select: none; box-sizing: border-box;
         display: none;
     `;
@@ -69,22 +93,56 @@
     document.addEventListener('mouseup', () => { if (isDragging) { isDragging = false; saveSettings(); } });
 
     // --- EFEKTY ---
+    function triggerMassiveConfetti() {
+        if (typeof confetti !== 'function') return;
+        const duration = 5 * 1000;
+        const animationEnd = Date.now() + duration;
+        const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 10000 };
+
+        function randomInRange(min, max) { return Math.random() * (max - min) + min; }
+
+        const interval = setInterval(function() {
+            const timeLeft = animationEnd - Date.now();
+            if (timeLeft <= 0) return clearInterval(interval);
+            const particleCount = 80 * (timeLeft / duration);
+            
+            confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } }));
+            confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } }));
+        }, 200);
+
+        setTimeout(() => { confetti({ particleCount: 400, spread: 160, origin: { y: 0.6 } }); }, 1000);
+    }
+
     const launchConfetti = () => {
-        if (!settings.confettiEnabled || !document.body) return;
-        for (let i = 0; i < 30; i++) {
-            const c = document.createElement('div');
-            c.innerText = ['🎉', '✨', '⭐', '💰'][Math.floor(Math.random() * 4)];
-            c.style.cssText = `position:fixed; left:${Math.random()*100}vw; top:-5vh; z-index:20000; font-size:25px; pointer-events:none; transition: transform ${Math.random()*2+2}s linear, opacity 2s;`;
-            document.body.appendChild(c);
-            setTimeout(() => {
-                c.style.transform = `translate(${(Math.random()-0.5)*200}px, 110vh) rotate(${Math.random()*360}deg)`;
-                c.style.opacity = '0';
-            }, 20);
-            setTimeout(() => c.remove(), 4000);
+        // Zwykłe konfetti emoji
+        if (settings.confettiEnabled && document.body) {
+            for (let i = 0; i < 30; i++) {
+                const c = document.createElement('div');
+                c.innerText = ['🎉', '✨', '⭐', '💰'][Math.floor(Math.random() * 4)];
+                c.style.cssText = `position:fixed; left:${Math.random()*100}vw; top:-5vh; z-index:20000; font-size:25px; pointer-events:none; transition: transform ${Math.random()*2+2}s linear, opacity 2s;`;
+                document.body.appendChild(c);
+                setTimeout(() => {
+                    c.style.transform = `translate(${(Math.random()-0.5)*200}px, 110vh) rotate(${Math.random()*360}deg)`;
+                    c.style.opacity = '0';
+                }, 20);
+                setTimeout(() => c.remove(), 4000);
+            }
+        }
+        
+
+        if (settings.massiveConfetti) {
+            if (typeof confetti === 'function') {
+                triggerMassiveConfetti();
+            } else {
+                loadConfettiLib();
+                setTimeout(triggerMassiveConfetti, 500);
+            }
         }
     };
 
-    const showJackpotText = (name, isRare = false) => {
+    const showJackpotText = (name) => {
+        if (!settings.showJackpotText) return; 
+
         if (!document.body) return;
         const old = document.getElementById('mfo-jackpot-text');
         if (old) old.remove();
@@ -92,18 +150,10 @@
         const div = document.createElement('div');
         div.id = 'mfo-jackpot-text';
         
-        if (isRare) {
-            div.innerHTML = `
-                <div style="position:absolute; right:10px; top:10px; cursor:pointer; font-size:24px; color:#fff;" onclick="this.parentElement.remove()">×</div>
-                <div style="font-size:22px; color:#fff; margin-bottom:15px; text-shadow: 0 0 10px #fff;">🍀 ULTRA RARE 🍀</div>
-                <div style="font-size:28px;">ZROB SCREENA I WSTAW NA DC TO COS DOSTANIESZ!</div>
-            `;
-            div.style.cssText = `position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); z-index: 10005; color:#00ffff; font-weight:bold; text-align:center; text-shadow:0 0 30px #000; background: rgba(0,0,0,0.9); padding: 40px; border-radius: 20px; border: 5px solid #00ffff; width: 70%; max-width: 700px; box-shadow: 0 0 100px rgba(0,255,255,0.5);`;
-        } else {
-            div.innerHTML = `<div style="font-size:16px; opacity:0.8;">JACKPOT!</div>${name}`;
-            div.style.cssText = `position:fixed; top:35%; left:50%; transform:translate(-50%, -50%); z-index: 10005; color:${settings.glowColor}; font-weight:bold; font-size:42px; text-align:center; text-shadow:0 0 20px #000, 0 0 10px ${settings.glowColor}; pointer-events:none; animation: mfoFade 4s forwards;`;
-            setTimeout(() => { if(div.parentElement) div.remove(); }, 4100);
-        }
+        div.innerHTML = `${name}`;
+        div.style.cssText = `position:fixed; top:35%; left:50%; transform:translate(-50%, -50%); z-index: 10005; color:${settings.glowColor}; font-weight:bold; font-size:42px; text-align:center; text-shadow:0 0 20px #000, 0 0 10px ${settings.glowColor}; pointer-events:none; animation: mfoFade 4s forwards;`;
+        setTimeout(() => { if(div.parentElement) div.remove(); }, 4100);
+        
         document.body.appendChild(div);
     };
 
@@ -115,6 +165,10 @@
                 .mfo-loot-jackpot-glow {
                     outline: 5px solid ${settings.glowColor} !important;
                     box-shadow: 0 0 50px 20px ${settings.glowColor}b3 !important;
+                }
+                .upgrade-result {
+                    transition: none !important;
+                    animation: none !important;
                 }
             `;
         }
@@ -133,7 +187,17 @@
                 <div style="font-size:11px;">
                     <div style="margin-bottom:6px;">
                         <label style="cursor:pointer; display:flex; align-items:center; gap:5px; color:#2ecc71;">
-                            <input type="checkbox" id="c-confetti" ${settings.confettiEnabled ? 'checked' : ''}> Efekty wizualne
+                            <input type="checkbox" id="c-confetti" ${settings.confettiEnabled ? 'checked' : ''}> Zwykłe konfetti
+                        </label>
+                    </div>
+                    <div style="margin-bottom:6px;">
+                        <label style="cursor:pointer; display:flex; align-items:center; gap:5px; color:#3498db;">
+                            <input type="checkbox" id="c-massive-confetti" ${settings.massiveConfetti ? 'checked' : ''}> Więcej konfetti
+                        </label>
+                    </div>
+                    <div style="margin-bottom:6px;">
+                        <label style="cursor:pointer; display:flex; align-items:center; gap:5px; color:#9b59b6;">
+                            <input type="checkbox" id="c-jackpot-text" ${settings.showJackpotText ? 'checked' : ''}> Pokazuj napis na środku
                         </label>
                     </div>
                     <div style="margin-bottom:6px;">
@@ -149,10 +213,24 @@
             </div>`;
 
         display.querySelector('#c-confetti').onchange = (e) => { settings.confettiEnabled = e.target.checked; saveSettings(); };
+        display.querySelector('#c-massive-confetti').onchange = (e) => { 
+            settings.massiveConfetti = e.target.checked; 
+            saveSettings(); 
+            if (settings.massiveConfetti) loadConfettiLib(); 
+        };
+        display.querySelector('#c-jackpot-text').onchange = (e) => { settings.showJackpotText = e.target.checked; saveSettings(); };
+        
         display.querySelector('#c-sound').onchange = (e) => { settings.soundUrl = e.target.value.trim(); saveSettings(); };
-        display.querySelector('#test-sound').onclick = () => playLootSound();
+        
+        display.querySelector('#test-sound').onclick = () => {
+            playLootSound();
+            launchConfetti();
+            showJackpotText("★ Testowy Przedmiot +8");
+        };
+
         display.querySelector('#c-glow').oninput = (e) => { settings.glowColor = e.target.value; saveSettings(); updateGlowStyle(); };
         display.querySelector('#c-text').oninput = (e) => { settings.textColor = e.target.value; saveSettings(); };
+        
         display.querySelector('#l-min').onclick = () => {
             settings.minimized = !settings.minimized;
             display.querySelector('#loot-content-wrapper').style.display = settings.minimized ? 'none' : 'block';
@@ -164,11 +242,9 @@
         mountDisplay();
     }
 
-    // Tablica przechowująca referencje do kontenerów, które aktualnie świecą
     let activeGlows = [];
 
     function scan() {
-        // Czyszczenie starych ramek, jeśli okno raportu zniknęło z ekranu
         activeGlows = activeGlows.filter(item => {
             if (!document.body.contains(item.report)) {
                 if (item.target) {
@@ -179,21 +255,13 @@
             return true;
         });
 
+        // 1. SKANOWANIE RAPORTÓW Z WALK
         const results = document.querySelectorAll('.BattleResultsDialog');
         results.forEach(res => {
             if (res.getAttribute('data-notified-once') === 'true') return;
 
             const parent = res.closest('.WUI_Dialog') || res.closest('.LayoutBox2');
             const target = parent ? (parent.querySelector('.dialog-container') || parent) : null;
-
-            if (!res.getAttribute('data-rare-notified')) {
-                res.setAttribute('data-rare-notified', 'true');
-                if (Math.random() < 0.0001) {
-                    playLootSound();
-                    launchConfetti();
-                    showJackpotText("", true);
-                }
-            }
 
             const items = res.querySelectorAll('.WUI_CatalogItem');
             let foundJackpot = false;
@@ -226,9 +294,42 @@
 
                 if (target) {
                     target.classList.add('mfo-loot-jackpot-glow');
-                    // Zapisujemy powiązanie: dopóki ten raport "res" istnieje w dokumencie, kontener "target" ma świecić
                     activeGlows.push({ report: res, target: target });
                 }
+            } else {
+                res.setAttribute('data-notified-once', 'true');
+            }
+        });
+
+        // 2. SKANOWANIE KOWALA / CRAFTINGU
+        const crafts = document.querySelectorAll('.upgrade-result');
+        crafts.forEach(res => {
+            if (res.getAttribute('data-notified-once') === 'true') return;
+
+            const itemNameElement = res.querySelector('.armor_name a.link');
+            if (!itemNameElement) return;
+
+            const itemName = itemNameElement.textContent.trim();
+            
+            if (itemName.includes('+8')) {
+                res.setAttribute('data-notified-once', 'true');
+                
+                playLootSound();
+                launchConfetti();
+                showJackpotText(itemName);
+
+                const parent = res.closest('.WUI_Dialog') || res.closest('.LayoutBox2');
+                const target = parent ? (parent.querySelector('.dialog-container') || parent) : res;
+
+                if (target) {
+                    target.classList.add('mfo-loot-jackpot-glow');
+                    activeGlows.push({ report: res, target: target });
+                }
+
+                itemNameElement.style.color = settings.textColor;
+                itemNameElement.style.fontWeight = "bold";
+                if (!itemNameElement.innerHTML.includes('★')) itemNameElement.innerHTML = "★ " + itemNameElement.innerHTML;
+
             } else {
                 res.setAttribute('data-notified-once', 'true');
             }
