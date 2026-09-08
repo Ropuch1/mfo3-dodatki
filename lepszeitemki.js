@@ -95,7 +95,11 @@
                 modal.remove();
             });
 
-            fetch(link.href, { credentials: 'include' })
+            // Wyciągamy samą ścieżkę względną, aby uniknąć problemów z CORS między subdomenami
+            const urlObj = new URL(link.href);
+            const relativeUrl = urlObj.pathname + urlObj.search;
+
+            fetch(relativeUrl, { credentials: 'include' })
                 .then(response => {
                     if (!response.ok) throw new Error(`Błąd HTTP: ${response.status}`);
                     return response.text();
