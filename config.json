@@ -1,7 +1,6 @@
 {
   "modules": [
     { "id": "roślinki", "name": "Wykrywacz kwiatków", "file": "kwiatki.js" },
-    { "id": "lepszeitemki", "name": "Lepszy podgląd przedmiotów1", "file": "lepszeitemki1.js"},
     { "id": "dart", "name": "Rzutki", "file": "dart.js" },
     { "id": "szyfr", "name": "Szyfr", "file": "szyfr.js" },
     { "id": "wasd", "name": "Sterowanie WASD", "file": "wasd.js" },
