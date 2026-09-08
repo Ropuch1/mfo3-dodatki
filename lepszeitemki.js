@@ -95,7 +95,7 @@
                 modal.remove();
             });
 
-            fetch(link.href)
+            fetch(link.href, { credentials: 'include' })
                 .then(response => {
                     if (!response.ok) throw new Error(`Błąd HTTP: ${response.status}`);
                     return response.text();
