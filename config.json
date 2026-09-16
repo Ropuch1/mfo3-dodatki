@@ -1,5 +1,6 @@
 {
   "modules": [
+    { "id": "pył", "name": "Licznik Pyłu", "file": "pyl.js" },
     { "id": "roślinki", "name": "Wykrywacz kwiatków", "file": "kwiatki.js" },
     { "id": "dart", "name": "Rzutki", "file": "dart.js" },
     { "id": "szyfr", "name": "Szyfr", "file": "szyfr.js" },
