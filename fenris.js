@@ -152,7 +152,7 @@
                             setTimeout(wykonajZamykanieIPrzeskok, opoznienieZamykania);
                         }
                     } else {
-                        console.log("[AutoFenris] Wykryto walkę, ale przeciwnik to nie Fenris.");
+                        
                         // Jeśli to nie Fenris, odblokuj, aby skrypt działał przy następnej walce
                         czyWWalce = false;
                     }
