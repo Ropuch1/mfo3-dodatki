@@ -5,29 +5,18 @@
     { "id": "szyfr", "name": "Szyfr", "file": "szyfr.js" },
     { "id": "wasd", "name": "Sterowanie WASD", "file": "wasd.js" },
     { "id": "fenris", "name": "Fenris FX", "file": "fenris.js" },
-    { 
-      "id": "heal", 
-      "name": "Leczenie", 
-      "file": "leczenie.js",
-      "settings": [
-        { "id": "k_heal", "label": "Lecz (klawisz)", "default": "KeyT" },
-        { "id": "k_ref", "label": "Odśwież (klawisz)", "default": "KeyR" }
-      ]
-    },
+    { "id": "heal", "name": "Leczenie", "file": "leczenie.js", "settings": [
+      { "id": "k_heal", "label": "Lecz (klawisz)", "default": "KeyT" }, { "id": "k_ref", "label": "Odśwież (klawisz)", "default": "KeyR" }]},
     { "id": "potwory", "name": "Potwory switch", "file": "potwory.js" },
     { "id": "autof", "name": "Auto f", "file": "autof.js" },
     { "id": "portal", "name": "Lepsze Portal", "file": "portal.js" },
-     { "id": "portal2", "name": "Portal-wersja próbna", "file": "portal2.js" },
+    { "id": "portal2", "name": "Portal-wersja próbna", "file": "portal2.js" },
     { "id": "filtr", "name": "Wyszukiwarka EQ", "file": "filtr.js" },
     { "id": "piorko", "name": "Brak piórka cię dobija?", "file": "piorko.js" },
     { "id": "chat", "name": "Czat", "file": "chat.js" },
     { "id": "notif", "name": "Notyfikator", "file": "notif.js" },
     { "id": "gemy", "name": "Licznik gemów", "file": "gemy.js" },
-    { 
-      "id": "grupa", 
-      "name": "QG", 
-      "file": "grupa.js",
-      "settings": [
+    { "id": "grupa", "name": "QG", "file": "grupa.js","settings": [
         { "id": "k_invite", "label": "Zaproś (klawisz)", "default": "KeyZ" },
         { "id": "k_accept", "label": "Akceptuj grupę (klawisz)", "default": "Enter" }
       ]
