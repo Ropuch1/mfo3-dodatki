@@ -54,22 +54,24 @@ const defaultData = [
                 config = parsed.map(item => ({
                     map: item.map || '',
                     name: item.name || '',
-                    category: item.category || 'inne',
+                    // Zmiana: wymuszamy aby kategoria była tablicą (konwersja starych danych)
+                    category: Array.isArray(item.category) ? item.category : [item.category || 'inne'],
                     pinned: item.pinned !== undefined ? !!item.pinned : true
                 }));
             } else {
                 config = Object.keys(parsed).map(k => ({
                     map: k,
                     name: parsed[k].name || '',
-                    category: parsed[k].category || 'inne',
+                    category: Array.isArray(parsed[k].category) ? parsed[k].category : [parsed[k].category || 'inne'],
                     pinned: parsed[k].pinned !== undefined ? !!parsed[k].pinned : true
                 }));
             }
         } else {
-            config = defaultData;
+            // Mapujemy domyślne dane, aby format String zmienić na Array
+            config = defaultData.map(item => ({ ...item, category: [item.category] }));
         }
     } catch(e) {
-        config = defaultData;
+        config = defaultData.map(item => ({ ...item, category: [item.category] }));
     }
 
     let hideCopyBtn = localStorage.getItem('mfo3_portal_hide_copy') === 'true';
@@ -99,49 +101,30 @@ const defaultData = [
         #portal-pool-select { padding: 4px 8px; font-size: 12px; font-weight: bold; border-radius: 4px; border: 1px solid #888; background: #fff; color: #000; cursor: pointer; }
         #portal-cfg-btn { padding: 4px 8px; font-size: 12px; font-weight: bold; border-radius: 4px; border: 1px solid #666; background: #e0e0e0; color: #000; cursor: pointer; }
         #portal-modal-bg { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.6); z-index: 99999; display: flex; justify-content: center; align-items: center; user-select: none; }
-        #portal-modal { background: #f4f4f4; border: 2px solid #333; border-radius: 8px; width: 610px; max-height: 80vh; padding: 15px; display: flex; flex-direction: column; color: #000; font-family: sans-serif; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
-        .cfg-row { display: flex; gap: 6px; margin-bottom: 6px; align-items: center; }
-        .cfg-row input[type="text"], .cfg-row select { padding: 4px; border: 1px solid #ccc; border-radius: 3px; font-size: 12px; user-select: text; }
+        #portal-modal { background: #f4f4f4; border: 2px solid #333; border-radius: 8px; width: 750px; max-height: 80vh; padding: 15px; display: flex; flex-direction: column; color: #000; font-family: sans-serif; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
+        .cfg-row { display: flex; gap: 6px; margin-bottom: 8px; align-items: center; border-bottom: 1px solid #ddd; padding-bottom: 5px; }
+        .cfg-row input[type="text"] { padding: 4px; border: 1px solid #ccc; border-radius: 3px; font-size: 12px; user-select: text; }
         .cfg-btn-move { width: 22px; height: 24px; padding: 0; font-size: 10px; cursor: pointer; border: 1px solid #aaa; background: #fff; border-radius: 3px; font-weight: bold; }
+        .cfg-cat-group { display: flex; flex-wrap: wrap; gap: 4px; font-size: 11px; width: 230px; }
+        .cfg-cat-group label { display: flex; align-items: center; gap: 2px; cursor: pointer; }
         .PortalDialog table.WUI_Table.data-table, .PortalDialog table.WUI_Table.data-table * { user-select: none !important; }
 
         .PortalDialog table.WUI_Table.data-table td.state {
-            width: 24px !important;
-            min-width: 24px !important;
-            max-width: 24px !important;
-            text-align: left !important;
-            vertical-align: middle !important;
-            padding: 0 !important;
+            width: 24px !important; min-width: 24px !important; max-width: 24px !important;
+            text-align: left !important; vertical-align: middle !important; padding: 0 !important;
         }
-        .PortalDialog table.WUI_Table.data-table td.state div.infinite {
-            display: inline-block !important;
-            margin: 5px !important;
-            vertical-align: middle !important;
-        }
-        .PortalDialog table.WUI_Table.data-table tr.root[data-pinned="false"] {
-            background-color: rgb(248, 227, 182) !important;
-            box-shadow: inset 3px 0 0 0 #ff0000 !important;
-        }
-        .PortalDialog table.WUI_Table.data-table tr.normal[data-pinned="false"] {
+        .PortalDialog table.WUI_Table.data-table td.state div.infinite { display: inline-block !important; margin: 5px !important; vertical-align: middle !important; }
+        .PortalDialog table.WUI_Table.data-table tr.root[data-pinned="false"], .PortalDialog table.WUI_Table.data-table tr.normal[data-pinned="false"] {
             background-color: rgb(248, 227, 182) !important;
         }
-        .PortalDialog table.WUI_Table.data-table tr[data-pinned="true"] {
-            background-color: rgb(246, 240, 206) !important;
-        }
+        .PortalDialog table.WUI_Table.data-table tr.root[data-pinned="false"] { box-shadow: inset 3px 0 0 0 #ff0000 !important; }
+        .PortalDialog table.WUI_Table.data-table tr[data-pinned="true"] { background-color: rgb(246, 240, 206) !important; }
         .PortalDialog table.WUI_Table.data-table tr[data-pinned="true"] td.state div.infinite,
         .PortalDialog table.WUI_Table.data-table tr[data-pinned="true"] td.state div.single,
         .PortalDialog table.WUI_Table.data-table tr[data-pinned="true"] td.name span,
-        .PortalDialog table.WUI_Table.data-table tr[data-pinned="true"] td.name small {
-            position: static !important;
-        }
-        .PortalDialog table.WUI_Table.data-table td.state div.single {
-            display: inline-block !important;
-            margin: 5px !important;
-            vertical-align: middle !important;
-        }
-        .PortalDialog table.WUI_Table.data-table td.name {
-            vertical-align: middle !important;
-        }
+        .PortalDialog table.WUI_Table.data-table tr[data-pinned="true"] td.name small { position: static !important; }
+        .PortalDialog table.WUI_Table.data-table td.state div.single { display: inline-block !important; margin: 5px !important; vertical-align: middle !important; }
+        .PortalDialog table.WUI_Table.data-table td.name { vertical-align: middle !important; }
 
         .mfo3-copy-btn {
             display: inline-flex; align-items: center; justify-content: center; margin-left: 8px; padding: 1px 5px; font-size: 10px; font-family: Tahoma, Geneva, sans-serif; font-weight: bold; cursor: pointer;
@@ -165,9 +148,14 @@ const defaultData = [
                     </label>
                 </div>
                 <div style="display:flex; font-weight:bold; font-size:11px; margin-bottom:5px; text-align:left; gap:6px; align-items:center;">
-                    <div style="width:48px; text-align:center;">Poz.</div><div style="flex:1">Oryginalna Mapa</div><div style="flex:1">Moja Nazwa</div><div style="width:90px">Kategoria</div><div style="width:55px; text-align:center;">Przypnij</div><div style="width:30px"></div>
+                    <div style="width:48px; text-align:center;">Poz.</div>
+                    <div style="flex:1">Oryginalna Mapa</div>
+                    <div style="flex:1">Moja Nazwa</div>
+                    <div style="width:230px">Tagi / Kategorie</div>
+                    <div style="width:55px; text-align:center;">Przypnij</div>
+                    <div style="width:30px"></div>
                 </div>
-                <div id="cfg-list" style="overflow-y:auto; flex:1; max-height:300px; padding-right:5px;"></div>
+                <div id="cfg-list" style="overflow-y:auto; flex:1; max-height:400px; padding-right:5px;"></div>
                 <div style="margin-top:10px; display:flex; gap:8px;">
                     <button id="cfg-add" style="flex:1; padding:6px; background:#d4edda; border:1px solid #c3e6cb; border-radius:4px; cursor:pointer; font-weight:bold; color:#155724;">+ Dodaj mapę</button>
                     <button id="cfg-save" style="flex:1; padding:6px; background:#cce5ff; border:1px solid #b8daff; border-radius:4px; cursor:pointer; font-weight:bold; color:#004085;">Zapisz (Wymaga odświeżenia tabeli)</button>
@@ -177,22 +165,25 @@ const defaultData = [
         document.body.appendChild(bg);
 
         const list = bg.querySelector("#cfg-list");
-        function createRow(map = "", name = "", category = "inne", pinned = true) {
+        
+        // Zmiana: argument kategoria domyślnie jest tablicą
+        function createRow(map = "", name = "", category = ["inne"], pinned = true) {
             const row = document.createElement("div");
             row.className = "cfg-row";
+            // Checkboxy generowane dynamicznie w oparciu o przekazaną tablicę category
             row.innerHTML = `
                 <div style="display:flex; gap:2px; width:48px;">
                     <button class="cfg-btn-move c-up" title="Przesuń w górę">▲</button><button class="cfg-btn-move c-down" title="Przesuń w dół">▼</button>
                 </div>
                 <input type="text" class="c-map" value="${map}" placeholder="Mapa w MFO3" style="flex:1">
                 <input type="text" class="c-name" value="${name}" placeholder="Własna nazwa" style="flex:1">
-                <select class="c-cat" style="width:90px">
-                    <option value="dzienne" ${category === 'dzienne' ? 'selected' : ''}>Dzienne</option>
-                    <option value="miniboss" ${category === 'miniboss' ? 'selected' : ''}>Miniboss</option>
-                    <option value="unikat" ${category === 'unikat' ? 'selected' : ''}>Unikat</option>
-                    <option value="miasta" ${category === 'miasta' ? 'selected' : ''}>Miasta</option>
-                    <option value="inne" ${category === 'inne' ? 'selected' : ''}>Inne</option>
-                </select>
+                <div class="cfg-cat-group">
+                    <label><input type="checkbox" class="c-cat" value="dzienne" ${category.includes('dzienne') ? 'checked' : ''}> Dzienne</label>
+                    <label><input type="checkbox" class="c-cat" value="miniboss" ${category.includes('miniboss') ? 'checked' : ''}> Miniboss</label>
+                    <label><input type="checkbox" class="c-cat" value="unikat" ${category.includes('unikat') ? 'checked' : ''}> Unikat</label>
+                    <label><input type="checkbox" class="c-cat" value="miasta" ${category.includes('miasta') ? 'checked' : ''}> Miasta</label>
+                    <label><input type="checkbox" class="c-cat" value="inne" ${category.includes('inne') ? 'checked' : ''}> Inne</label>
+                </div>
                 <div style="width:55px; display:flex; justify-content:center; align-items:center;">
                     <input type="checkbox" class="c-pinned" ${pinned ? 'checked' : ''} title="Przypnij">
                 </div>
@@ -205,7 +196,7 @@ const defaultData = [
         }
 
         config.forEach(item => list.appendChild(createRow(item.map, item.name, item.category, item.pinned !== false)));
-        bg.querySelector("#cfg-add").onclick = () => list.appendChild(createRow("", "", "inne", true));
+        bg.querySelector("#cfg-add").onclick = () => list.appendChild(createRow("", "", ["inne"], true));
 
         bg.querySelector("#cfg-save").onclick = () => {
             hideCopyBtn = bg.querySelector("#cfg-hide-copy").checked;
@@ -213,9 +204,14 @@ const defaultData = [
             list.querySelectorAll(".cfg-row").forEach(r => {
                 const map = r.querySelector(".c-map").value.trim();
                 const name = r.querySelector(".c-name").value.trim();
-                const category = r.querySelector(".c-cat").value;
+                
+                // Zmiana: zbieramy wszystkie zaznaczone checkboxy
+                const checkboxes = r.querySelectorAll(".c-cat:checked");
+                let categories = Array.from(checkboxes).map(cb => cb.value);
+                if (categories.length === 0) categories = ["inne"]; // Domyślnie jak nic nie zaznaczono
+                
                 const pinned = r.querySelector(".c-pinned").checked;
-                if (map) newConfig.push({ map, name, category, pinned });
+                if (map) newConfig.push({ map, name, category: categories, pinned });
             });
             config = newConfig;
             saveConfig();
@@ -230,7 +226,7 @@ const defaultData = [
     }
 
     function getConfigForMap(rawMapName) {
-        if (!rawMapName) return { item: { map: "", name: "", category: "inne", pinned: false }, index: 9999 };
+        if (!rawMapName) return { item: { map: "", name: "", category: ["inne"], pinned: false }, index: 9999 };
         const clean = rawMapName.toLowerCase().trim();
         for (let i = 0; i < config.length; i++) {
             const item = config[i];
@@ -239,7 +235,7 @@ const defaultData = [
                 return { item, index: i };
             }
         }
-        return { item: { map: rawMapName, name: "", category: "inne", pinned: false }, index: 9999 };
+        return { item: { map: rawMapName, name: "", category: ["inne"], pinned: false }, index: 9999 };
     }
 
     function processPortalTable(table) {
@@ -290,11 +286,13 @@ const defaultData = [
             const { item: mapCfg, index } = getConfigForMap(rawName);
             const isPinned = mapCfg.pinned !== false && mapCfg.pinned !== undefined;
 
-            row.dataset.category = mapCfg.category;
+            row.dataset.category = mapCfg.category.join(','); // Zamieniamy tablicę w string na potrzeby dataset
             row.dataset.pinned = isPinned ? "true" : "false";
             row.dataset.sortIndex = isPinned ? index : 9999;
 
-            const shouldShow = currentFilter === 'all' || row.dataset.category === currentFilter;
+            // Zmiana logiczna filtra: używamy .includes zamiast ===
+            const shouldShow = currentFilter === 'all' || mapCfg.category.includes(currentFilter);
+            
             if (row.style.display !== (shouldShow ? "" : "none")) {
                 row.style.display = shouldShow ? "" : "none";
             }
