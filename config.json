@@ -13,6 +13,7 @@
     { "id": "portal2", "name": "Portal-wersja próbna", "file": "portal2.js" },
     { "id": "filtr", "name": "Wyszukiwarka EQ", "file": "filtr.js" },
     { "id": "piorko", "name": "Brak piórka cię dobija?", "file": "piorko.js" },
+    { "id": "wykrywacz", "name": "Wykrywacz", "file": "wykrywacz.js"},
     { "id": "chat", "name": "Czat", "file": "chat.js" },
     { "id": "notif", "name": "Notyfikator", "file": "notif.js" },
     { "id": "gemy", "name": "Licznik gemów", "file": "gemy.js" },
