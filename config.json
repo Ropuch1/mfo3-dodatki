@@ -17,6 +17,7 @@
     { "id": "potwory", "name": "Potwory switch", "file": "potwory.js" },
     { "id": "autof", "name": "Auto f", "file": "autof.js" },
     { "id": "portal", "name": "Lepsze Portal", "file": "portal.js" },
+     { "id": "portal2", "name": "Portal-wersja próbna", "file": "portal2.js" },
     { "id": "filtr", "name": "Wyszukiwarka EQ", "file": "filtr.js" },
     { "id": "piorko", "name": "Brak piórka cię dobija?", "file": "piorko.js" },
     { "id": "chat", "name": "Czat", "file": "chat.js" },
