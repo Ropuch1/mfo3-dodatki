@@ -11,7 +11,7 @@
     gui.id = 'egg-tracker-gui';
     gui.innerHTML = `
         <div id="egg-tracker-header" style="cursor: move; background: #222; padding: 6px 10px; font-weight: bold; border-bottom: 1px solid #444; display: flex; justify-content: space-between; align-items: center; border-top-left-radius: 6px; border-top-right-radius: 6px;">
-            <span style="color: #4da6ff;">🧭 Wykrywacz Obiektów</span>
+            <span style="color: #4da6ff;">😭Brak jajka cię dobija?😭</span>
             <div style="display: flex; gap: 6px; align-items: center;">
                 <span id="mfo-settings-btn" style="cursor: pointer; font-size: 13px;" title="Zarządzaj czarną listą">⚙️</span>
                 <span style="font-size: 9px; color: #888;">Przesuń</span>
