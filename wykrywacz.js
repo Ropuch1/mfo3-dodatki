@@ -1,7 +1,7 @@
 (function() {
     'use strict';
 
-    let targetNames = JSON.parse(localStorage.getItem('mfo_target_names')) || ['nasiono górskiej trawy', 'nasiono dziekiego grochu'];
+    let targetNames = JSON.parse(localStorage.getItem('mfo_target_names')) || ['nasiono górskiej trawy', 'nasiono dzikiego grochu'];
     let blacklistedIds = JSON.parse(localStorage.getItem('mfo_blacklisted_ids')) || [];
     
     const loggedEvents = new Set();
