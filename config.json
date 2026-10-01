@@ -1,5 +1,6 @@
 {
   "modules": [
+    { "id": "lewabelka", "name": "Ukrywanie Lewej Belki", "file": "lewabelka.js" },
     { "id": "pył", "name": "Licznik Pyłu", "file": "pyl.js" },
     { "id": "roślinki", "name": "Wykrywacz kwiatków", "file": "kwiatki.js" },
     { "id": "dart", "name": "Rzutki", "file": "dart.js" },
