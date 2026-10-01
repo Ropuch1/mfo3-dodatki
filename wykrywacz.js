@@ -11,9 +11,10 @@
         let targetNames = JSON.parse(localStorage.getItem('mfo_target_names')) || ['nasiono górskiej trawy', 'nasiono dzikiego grochu'];
         let blacklistedIds = JSON.parse(localStorage.getItem('mfo_blacklisted_ids')) || [];
         
-        // Stan zwijania i zamknięcia z localStorage
+        // Stan zwijania, zamknięcia oraz pozycji z localStorage
         let isCollapsed = JSON.parse(localStorage.getItem('mfo_gui_collapsed')) || false;
         let isClosed = JSON.parse(localStorage.getItem('mfo_gui_closed')) || false;
+        let savedPos = JSON.parse(localStorage.getItem('mfo_gui_position')) || { top: '100px', left: '20px' };
 
         const loggedEvents = new Set();
 
@@ -22,7 +23,7 @@
         gui.id = 'egg-tracker-gui';
         gui.innerHTML = `
             <div id="egg-tracker-header" style="cursor: move; background: #222; padding: 6px 10px; font-weight: bold; border-bottom: 1px solid #444; display: flex; justify-content: space-between; align-items: center; border-top-left-radius: 6px; border-top-right-radius: 6px;">
-                <span style="color: #4da6ff;">😭Brak ajka cię dobija?😭</span>
+                <span style="color: #4da6ff;">😭Brak jajka cię dobija?😭</span>
                 <div style="display: flex; gap: 6px; align-items: center;">
                     <span id="mfo-settings-btn" style="cursor: pointer; font-size: 13px;" title="Zarządzaj czarną listą">⚙️</span>
                     <span id="mfo-toggle-btn" style="cursor: pointer; font-size: 13px; font-weight: bold; user-select: none; width: 14px; text-align: center;" title="Zwiń / Rozwiń">${isCollapsed ? '➕' : '—'}</span>
@@ -64,8 +65,8 @@
 
         Object.assign(gui.style, {
             position: 'fixed',
-            top: '100px',
-            left: '20px',
+            top: savedPos.top,
+            left: savedPos.left,
             width: '260px',
             background: 'rgba(18, 18, 18, 0.95)',
             color: '#fff',
@@ -111,7 +112,7 @@
             mainView.style.display = 'block';
         });
 
-        // Przeciąganie okienka
+        // Przeciąganie okienka i zapis pozycji
         let isDragging = false, offsetLeft = 0, offsetTop = 0;
         const header = document.getElementById('egg-tracker-header');
 
@@ -128,7 +129,15 @@
             gui.style.top = `${e.clientY - offsetTop}px`;
         });
 
-        document.addEventListener('mouseup', () => { isDragging = false; });
+        document.addEventListener('mouseup', () => {
+            if (isDragging) {
+                isDragging = false;
+                localStorage.setItem('mfo_gui_position', JSON.stringify({
+                    top: gui.style.top,
+                    left: gui.style.left
+                }));
+            }
+        });
 
         // Odświeżanie listy szukanych słów
         function renderTargetsList() {
@@ -227,7 +236,6 @@
 
         // Główna pętla
         function updateTracker() {
-            // Jeśli GUI zostało zamknięte, pomiń odświeżanie interfejsu
             if (gui.style.display === 'none') return;
 
             if (typeof MapEngine === 'undefined' || !MapEngine.instance || !MapEngine.instance.objects) {
@@ -356,7 +364,6 @@
         setInterval(updateTracker, 300);
     }
 
-    // Bezpieczne uruchomienie niezależnie od momentu ładowania strony
     if (document.readyState === 'complete' || document.readyState === 'interactive') {
         initEggTracker();
     } else {
