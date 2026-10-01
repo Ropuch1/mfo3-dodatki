@@ -4,64 +4,33 @@
     if (window.__mfoEggTrackerLoaded) return;
     window.__mfoEggTrackerLoaded = true;
 
-    // Funkcja pomocnicza do poruszania postacią po mapie
+    // Funkcja pomocnicza do poruszania postacią po mapie (poprawiona pod MFO3 - kliknięcie w zasięgu widoku)
     function walkToCoords(targetX, targetY) {
-        if (typeof MapEngine === 'undefined' || !MapEngine.instance) {
-            console.error('[MFO3] Silnik mapy nie jest załadowany.');
+        const me = window.MapEngine ? window.MapEngine.instance : null;
+        if (!me || !me.mapClickHandler) {
+            console.error('[MFO3] Brak MapEngine lub mapClickHandler!');
             return;
         }
 
-        const me = MapEngine.instance;
+        const gameLayout = typeof $=== 'function' ?$('GameLayout') : document.getElementById('GameLayout');
+        const b = me.container.getPosition ? me.container.getPosition(gameLayout) : { x: 0, y: 0 };
+        const tileSizeX = me.options.tile_size.x;
+        const tileSizeY = me.options.tile_size.y;
+        const scrollLeft = me.container.scrollLeft || 0;
+        const scrollTop = me.container.scrollTop || 0;
 
-        // 1. Wywołanie natywnej metody poruszania silnika (jeśli istnieje)
-        if (typeof me.walkTo === 'function') {
-            me.walkTo(targetX, targetY);
-            return;
-        }
+        const pageX = b.x - scrollLeft + (targetX * tileSizeX) + (tileSizeX / 2);
+        const pageY = b.y - scrollTop + (targetY * tileSizeY) + (tileSizeY / 2);
 
-        // 2. Szukanie obiektu gracza
-        let player = me.player;
-        if (!player && me.ActivePlayer) {
-            player = me.ActivePlayer.instance || me.ActivePlayer;
-        }
-        if (!player && me.players) {
-            for (let id in me.players) {
-                const p = me.players[id];
-                if (p && (p.isMe || p.hero || p.active || p == me.ActivePlayer)) {
-                    player = p;
-                    break;
-                }
-            }
-            if (!player) player = Object.values(me.players)[0];
-        }
+        const fakeEvent = {
+            stop: function() {},
+            type: 'click',
+            control: false,
+            page: { x: pageX, y: pageY }
+        };
 
-        if (!player) {
-            console.error('[MFO3] Nie odnaleziono obiektu gracza.');
-            return;
-        }
-
-        // 3. Wyznazanie ścieżki i marsz
-        if (typeof player.walkTo === 'function') {
-            player.walkTo(targetX, targetY);
-        } else if (typeof me.findPath === 'function') {
-            const startX = player.x !== undefined ? player.x : (player.position ? player.position.x : 0);
-            const startY = player.y !== undefined ? player.y : (player.position ? player.position.y : 0);
-            const path = me.findPath(startX, startY, targetX, targetY);
-
-            if (path && path.length > 0) {
-                if (typeof player.setPath === 'function') {
-                    player.setPath(path);
-                } else if (typeof me.movePlayer === 'function') {
-                    me.movePlayer(path);
-                } else if (typeof me.followPath === 'function') {
-                    me.followPath(path);
-                }
-            } else {
-                console.warn(`[MFO3] Nie można wyznaczyć ścieżki do (${targetX}, ${targetY}).`);
-            }
-        } else if (typeof me.movePlayer === 'function') {
-            me.movePlayer(targetX, targetY);
-        }
+        console.log(`[Wykrywacz] Idę do kafelka: (${targetX}, ${targetY})`);
+        me.mapClickHandler(fakeEvent);
     }
 
     function initEggTracker() {
@@ -80,7 +49,7 @@
         gui.id = 'egg-tracker-gui';
         gui.innerHTML = `
             <div id="egg-tracker-header" style="cursor: move; background: #222; padding: 6px 10px; font-weight: bold; border-bottom: 1px solid #444; display: flex; justify-content: space-between; align-items: center; border-top-left-radius: 6px; border-top-right-radius: 6px;">
-                <span style="color: #4da6ff; pointer-events: none;">😭Brak jjajka cię dobija?😭</span>
+                <span style="color: #4da6ff; pointer-events: none;">😭Brak jajka cię dobija?😭</span>
                 <div style="display: flex; gap: 6px; align-items: center;">
                     <span id="mfo-settings-btn" style="cursor: pointer; font-size: 13px;" title="Zarządzaj czarną listą">⚙️</span>
                     <span id="mfo-toggle-btn" style="cursor: pointer; font-size: 13px; font-weight: bold; user-select: none; width: 14px; text-align: center;" title="Zwiń / Rozwiń">${isCollapsed ? '➕' : '—'}</span>
@@ -376,7 +345,6 @@
                     contentDiv.innerHTML = foundItemsHTML;
                     gui.style.borderColor = '#00ff00';
 
-                    // Obsługa przycisku "Podejdź"
                     document.querySelectorAll('.mfo-walk-btn').forEach(btn => {
                         btn.addEventListener('click', (e) => {
                             const x = parseInt(e.target.getAttribute('data-x'), 10);
