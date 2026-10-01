@@ -4,6 +4,66 @@
     if (window.__mfoEggTrackerLoaded) return;
     window.__mfoEggTrackerLoaded = true;
 
+    // Funkcja pomocnicza do poruszania postacią po mapie
+    function walkToCoords(targetX, targetY) {
+        if (typeof MapEngine === 'undefined' || !MapEngine.instance) {
+            console.error('[MFO3] Silnik mapy nie jest załadowany.');
+            return;
+        }
+
+        const me = MapEngine.instance;
+
+        // 1. Wywołanie natywnej metody poruszania silnika (jeśli istnieje)
+        if (typeof me.walkTo === 'function') {
+            me.walkTo(targetX, targetY);
+            return;
+        }
+
+        // 2. Szukanie obiektu gracza
+        let player = me.player;
+        if (!player && me.ActivePlayer) {
+            player = me.ActivePlayer.instance || me.ActivePlayer;
+        }
+        if (!player && me.players) {
+            for (let id in me.players) {
+                const p = me.players[id];
+                if (p && (p.isMe || p.hero || p.active || p == me.ActivePlayer)) {
+                    player = p;
+                    break;
+                }
+            }
+            if (!player) player = Object.values(me.players)[0];
+        }
+
+        if (!player) {
+            console.error('[MFO3] Nie odnaleziono obiektu gracza.');
+            return;
+        }
+
+        // 3. Wyznazanie ścieżki i marsz
+        if (typeof player.walkTo === 'function') {
+            player.walkTo(targetX, targetY);
+        } else if (typeof me.findPath === 'function') {
+            const startX = player.x !== undefined ? player.x : (player.position ? player.position.x : 0);
+            const startY = player.y !== undefined ? player.y : (player.position ? player.position.y : 0);
+            const path = me.findPath(startX, startY, targetX, targetY);
+
+            if (path && path.length > 0) {
+                if (typeof player.setPath === 'function') {
+                    player.setPath(path);
+                } else if (typeof me.movePlayer === 'function') {
+                    me.movePlayer(path);
+                } else if (typeof me.followPath === 'function') {
+                    me.followPath(path);
+                }
+            } else {
+                console.warn(`[MFO3] Nie można wyznaczyć ścieżki do (${targetX}, ${targetY}).`);
+            }
+        } else if (typeof me.movePlayer === 'function') {
+            me.movePlayer(targetX, targetY);
+        }
+    }
+
     function initEggTracker() {
         if (document.getElementById('egg-tracker-gui')) return;
 
@@ -20,7 +80,7 @@
         gui.id = 'egg-tracker-gui';
         gui.innerHTML = `
             <div id="egg-tracker-header" style="cursor: move; background: #222; padding: 6px 10px; font-weight: bold; border-bottom: 1px solid #444; display: flex; justify-content: space-between; align-items: center; border-top-left-radius: 6px; border-top-right-radius: 6px;">
-                <span style="color: #4da6ff; pointer-events: none;">😭Brak jajka cię dobija?😭</span>
+                <span style="color: #4da6ff; pointer-events: none;">😭Brak jjajka cię dobija?😭</span>
                 <div style="display: flex; gap: 6px; align-items: center;">
                     <span id="mfo-settings-btn" style="cursor: pointer; font-size: 13px;" title="Zarządzaj czarną listą">⚙️</span>
                     <span id="mfo-toggle-btn" style="cursor: pointer; font-size: 13px; font-weight: bold; user-select: none; width: 14px; text-align: center;" title="Zwiń / Rozwiń">${isCollapsed ? '➕' : '—'}</span>
@@ -83,7 +143,6 @@
         const toggleBtn = document.getElementById('mfo-toggle-btn');
         const closeBtn = document.getElementById('mfo-close-btn');
 
-        // Przełączanie zwijania
         toggleBtn.addEventListener('click', () => {
             isCollapsed = !isCollapsed;
             bodyContainer.style.display = isCollapsed ? 'none' : 'block';
@@ -91,13 +150,11 @@
             localStorage.setItem('mfo_gui_collapsed', JSON.stringify(isCollapsed));
         });
 
-        // Zamykanie dodatku
         closeBtn.addEventListener('click', () => {
             gui.style.display = 'none';
             localStorage.setItem('mfo_gui_closed', JSON.stringify(true));
         });
 
-        // Przełączanie widoków
         document.getElementById('mfo-settings-btn').addEventListener('click', () => {
             mainView.style.display = 'none';
             settingsView.style.display = 'block';
@@ -109,12 +166,10 @@
             mainView.style.display = 'block';
         });
 
-        // Poprawione przeciąganie okienka
         let isDragging = false, offsetLeft = 0, offsetTop = 0;
         const header = document.getElementById('egg-tracker-header');
 
         header.addEventListener('mousedown', (e) => {
-            // Ignoruj kliknięcia bezpośrednio w przyciski akcji
             if (e.target.closest('#mfo-settings-btn, #mfo-toggle-btn, #mfo-close-btn')) return;
             
             e.preventDefault();
@@ -139,7 +194,6 @@
             }
         });
 
-        // Odświeżanie listy szukanych słów
         function renderTargetsList() {
             const container = document.getElementById('mfo-targets-list');
             container.innerHTML = '';
@@ -159,7 +213,6 @@
         }
         renderTargetsList();
 
-        // Renderowanie widoku czarnej listy
         function renderBlacklistPanel() {
             const container = document.getElementById('mfo-blacklist-content');
             if (blacklistedIds.length === 0) {
@@ -190,7 +243,6 @@
             });
         }
 
-        // Dodawanie nowego elementu do szukania
         document.getElementById('mfo-add-btn').addEventListener('click', () => {
             const input = document.getElementById('mfo-new-input');
             const val = input.value.trim().toLowerCase();
@@ -202,7 +254,6 @@
             }
         });
 
-        // Powrót do postaci
         document.getElementById('mfo-center-hero-btn').addEventListener('click', () => {
             let heroEl = null;
 
@@ -234,7 +285,6 @@
             }
         });
 
-        // Główna pętla
         function updateTracker() {
             if (gui.style.display === 'none') return;
 
@@ -280,7 +330,7 @@
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 2px;">
                                 <span style="font-size: 9px;">X:${posX} Y:${posY}</span>
                                 <div style="display: flex; gap: 3px;">
-                                    <button class="mfo-show-btn" data-key="${key}" style="background: #17a2b8; color: white; border: none; padding: 1px 4px; border-radius: 2px; cursor: pointer; font-size: 9px;">Pokaż</button>
+                                    <button class="mfo-walk-btn" data-x="${posX}" data-y="${posY}" style="background: #28a745; color: white; border: none; padding: 1px 4px; border-radius: 2px; cursor: pointer; font-size: 9px; font-weight: bold;">Podejdź</button>
                                     <button class="mfo-ban-btn" data-key="${key}" style="background: #dc3545; color: white; border: none; padding: 1px 4px; border-radius: 2px; cursor: pointer; font-size: 9px;" title="Ukryj ten konkretny egzemplarz">Ukryj</button>
                                 </div>
                             </div>
@@ -326,15 +376,15 @@
                     contentDiv.innerHTML = foundItemsHTML;
                     gui.style.borderColor = '#00ff00';
 
-                    document.querySelectorAll('.mfo-show-btn').forEach(btn => {
+                    // Obsługa przycisku "Podejdź"
+                    document.querySelectorAll('.mfo-walk-btn').forEach(btn => {
                         btn.addEventListener('click', (e) => {
-                            const key = e.target.getAttribute('data-key');
-                            const currentObj = MapEngine.instance.objects[key];
-                            if (currentObj) {
-                                let targetEl = currentObj.dom_id ? document.getElementById(currentObj.dom_id) : (currentObj.sprite ? currentObj.sprite.element : null);
-                                if (targetEl) {
-                                    targetEl.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
-                                }
+                            const x = parseInt(e.target.getAttribute('data-x'), 10);
+                            const y = parseInt(e.target.getAttribute('data-y'), 10);
+                            if (!isNaN(x) && !isNaN(y)) {
+                                walkToCoords(x, y);
+                            } else {
+                                console.warn('[MFO3] Błędne współrzędne obiektu.');
                             }
                         });
                     });
