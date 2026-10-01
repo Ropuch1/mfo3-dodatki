@@ -1,7 +1,6 @@
 (function() {
     'use strict';
 
-    // Zapobieganie wielokrotnemu uruchomieniu
     if (window.__mfoEggTrackerLoaded) return;
     window.__mfoEggTrackerLoaded = true;
 
@@ -11,19 +10,17 @@
         let targetNames = JSON.parse(localStorage.getItem('mfo_target_names')) || ['nasiono górskiej trawy', 'nasiono dzikiego grochu'];
         let blacklistedIds = JSON.parse(localStorage.getItem('mfo_blacklisted_ids')) || [];
         
-        // Stan zwijania, zamknięcia oraz pozycji z localStorage
         let isCollapsed = JSON.parse(localStorage.getItem('mfo_gui_collapsed')) || false;
         let isClosed = JSON.parse(localStorage.getItem('mfo_gui_closed')) || false;
         let savedPos = JSON.parse(localStorage.getItem('mfo_gui_position')) || { top: '100px', left: '20px' };
 
         const loggedEvents = new Set();
 
-        // 1. Tworzenie okienka (GUI)
         const gui = document.createElement('div');
         gui.id = 'egg-tracker-gui';
         gui.innerHTML = `
             <div id="egg-tracker-header" style="cursor: move; background: #222; padding: 6px 10px; font-weight: bold; border-bottom: 1px solid #444; display: flex; justify-content: space-between; align-items: center; border-top-left-radius: 6px; border-top-right-radius: 6px;">
-                <span style="color: #4da6ff;">😭Brak jajka cię dobija?😭</span>
+                <span style="color: #4da6ff; pointer-events: none;">😭Brak jajka cię dobija?😭</span>
                 <div style="display: flex; gap: 6px; align-items: center;">
                     <span id="mfo-settings-btn" style="cursor: pointer; font-size: 13px;" title="Zarządzaj czarną listą">⚙️</span>
                     <span id="mfo-toggle-btn" style="cursor: pointer; font-size: 13px; font-weight: bold; user-select: none; width: 14px; text-align: center;" title="Zwiń / Rozwiń">${isCollapsed ? '➕' : '—'}</span>
@@ -112,12 +109,15 @@
             mainView.style.display = 'block';
         });
 
-        // Przeciąganie okienka i zapis pozycji
+        // Poprawione przeciąganie okienka
         let isDragging = false, offsetLeft = 0, offsetTop = 0;
         const header = document.getElementById('egg-tracker-header');
 
         header.addEventListener('mousedown', (e) => {
-            if (e.target.tagName === 'SPAN') return; // nie przeciągaj klikając w przyciski
+            // Ignoruj kliknięcia bezpośrednio w przyciski akcji
+            if (e.target.closest('#mfo-settings-btn, #mfo-toggle-btn, #mfo-close-btn')) return;
+            
+            e.preventDefault();
             isDragging = true;
             offsetLeft = e.clientX - gui.offsetLeft;
             offsetTop = e.clientY - gui.offsetTop;
