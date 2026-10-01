@@ -1,5 +1,6 @@
 {
   "modules": [
+     { "id": "wykrywacz", "name": "Brak jajka cię dobija?", "file": "wykrywacz.js"},
     { "id": "lewabelka", "name": "Ukrywanie Lewej Belki", "file": "lewabelka.js" },
     { "id": "pył", "name": "Licznik Pyłu", "file": "pyl.js" },
     { "id": "roślinki", "name": "Wykrywacz kwiatków", "file": "kwiatki.js" },
@@ -14,7 +15,6 @@
     { "id": "portal", "name": "Lepsze Portal", "file": "portal.js" },
     { "id": "portal2", "name": "Portal-wersja próbna", "file": "portal2.js" },
     { "id": "filtr", "name": "Wyszukiwarka EQ", "file": "filtr.js" },
-    { "id": "wykrywacz", "name": "Brak jajka cię dobija?", "file": "wykrywacz.js"},
     { "id": "chat", "name": "Czat", "file": "chat.js" },
     { "id": "notif", "name": "Notyfikator", "file": "notif.js" },
     { "id": "gemy", "name": "Licznik gemów", "file": "gemy.js" },
