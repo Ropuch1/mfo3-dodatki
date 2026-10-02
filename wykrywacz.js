@@ -4,7 +4,7 @@
     if (window.__mfoEggTrackerLoaded) return;
     window.__mfoEggTrackerLoaded = true;
 
-    // Funkcja pomocnicza do poruszania postacią po mapie (poprawiona pod MFO3 - kliknięcie w zasięgu widoku)
+    // Funkcja pomocnicza do poruszania postacią po mapie
     function walkToCoords(targetX, targetY) {
         const me = window.MapEngine ? window.MapEngine.instance : null;
         if (!me || !me.mapClickHandler) {
@@ -33,6 +33,26 @@
         me.mapClickHandler(fakeEvent);
     }
 
+    // Pomocnicza funkcja do pobierania pozycji gracza
+    function getHeroPos() {
+        const me = window.MapEngine ? window.MapEngine.instance : null;
+        if (!me) return null;
+        if (me.hero) return { x: me.hero.x, y: me.hero.y };
+        if (me.player) return { x: me.player.x, y: me.player.y };
+        if (me.players) {
+            for (let id in me.players) {
+                const p = me.players[id];
+                if (p && (p.x !== undefined || p.position)) {
+                    return {
+                        x: p.x !== undefined ? p.x : p.position.x,
+                        y: p.y !== undefined ? p.y : p.position.y
+                    };
+                }
+            }
+        }
+        return null;
+    }
+
     function initEggTracker() {
         if (document.getElementById('egg-tracker-gui')) return;
 
@@ -44,6 +64,14 @@
         let savedPos = JSON.parse(localStorage.getItem('mfo_gui_position')) || { top: '100px', left: '20px' };
 
         const loggedEvents = new Set();
+
+        // Zmienne do autowalku i wykrywania zacięcia
+        let currentFoundObjects = [];
+        let currentAutoIndex = 0;
+        let stuckAttempts = 0;
+        let lastTargetKey = null;
+        let lastHeroPos = null;
+        let lastWalkTimestamp = 0;
 
         const gui = document.createElement('div');
         gui.id = 'egg-tracker-gui';
@@ -75,6 +103,7 @@
 
                     <hr style="border: 0; border-top: 1px solid #444; margin: 6px 0;">
                     
+                    <button id="mfo-autowalk-btn" style="width: 100%; background: #28a745; color: white; border: none; padding: 5px; border-radius: 3px; cursor: pointer; font-weight: bold; font-size: 11px; margin-bottom: 4px;" title="Skrót klawiszowy: E">⚡ [E] Podejdź do obiektu</button>
                     <button id="mfo-center-hero-btn" style="width: 100%; background: #007bff; color: white; border: none; padding: 5px; border-radius: 3px; cursor: pointer; font-weight: bold; font-size: 11px;">👤 Powrót do postaci</button>
                 </div>
 
@@ -254,6 +283,77 @@
             }
         });
 
+        // Funkcja idąca do kolejnego dostępnego obiektu na liście
+        function autoWalkToNextAvailable() {
+            if (!currentFoundObjects || currentFoundObjects.length === 0) {
+                console.log('[Wykrywacz] Brak obiektów na mapie do podejścia.');
+                return;
+            }
+
+            if (currentAutoIndex >= currentFoundObjects.length) {
+                currentAutoIndex = 0;
+            }
+
+            const targetObj = currentFoundObjects[currentAutoIndex];
+            if (!targetObj || targetObj.x === 'b/d' || targetObj.y === 'b/d') {
+                console.warn('[Wykrywacz] Obiekt ma nieprawidłowe współrzędne.');
+                return;
+            }
+
+            const currentHeroPos = getHeroPos();
+            const now = Date.now();
+
+            if (lastTargetKey === targetObj.key) {
+                // Sprawdzaj brak ruchu co min. 700ms
+                if (now - lastWalkTimestamp > 700) {
+                    if (lastHeroPos && currentHeroPos && lastHeroPos.x === currentHeroPos.x && lastHeroPos.y === currentHeroPos.y) {
+                        stuckAttempts++;
+                        console.warn(`[Wykrywacz] Brak ruchu do obiektu "${targetObj.name}" (próba ${stuckAttempts}/3)`);
+                    } else {
+                        stuckAttempts = 0;
+                    }
+                    lastHeroPos = currentHeroPos;
+                    lastWalkTimestamp = now;
+                }
+            } else {
+                lastTargetKey = targetObj.key;
+                stuckAttempts = 0;
+                lastHeroPos = currentHeroPos;
+                lastWalkTimestamp = now;
+            }
+
+            // Jeśli po 3 próbach brak ruchu - zmień cel na następny z listy
+            if (stuckAttempts >= 3) {
+                console.warn(`[Wykrywacz] Obiekt "${targetObj.name}" jest zablokowany/niedostępny. Przełączam cel (${currentAutoIndex + 1}/${currentFoundObjects.length})...`);
+                stuckAttempts = 0;
+                currentAutoIndex = (currentAutoIndex + 1) % currentFoundObjects.length;
+                const nextTarget = currentFoundObjects[currentAutoIndex];
+                lastTargetKey = nextTarget.key;
+                lastWalkTimestamp = now;
+
+                if (nextTarget && nextTarget.x !== 'b/d') {
+                    walkToCoords(nextTarget.x, nextTarget.y);
+                }
+                return;
+            }
+
+            walkToCoords(targetObj.x, targetObj.y);
+        }
+
+        document.getElementById('mfo-autowalk-btn').addEventListener('click', autoWalkToNextAvailable);
+
+        // Klawisz 'E' jako skrót do podejścia
+        document.addEventListener('keydown', (e) => {
+            const active = document.activeElement;
+            if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.isContentEditable)) {
+                return;
+            }
+
+            if (e.code === 'KeyE' || e.key === 'e' || e.key === 'E') {
+                autoWalkToNextAvailable();
+            }
+        });
+
         function updateTracker() {
             if (gui.style.display === 'none') return;
 
@@ -264,6 +364,7 @@
             const objects = MapEngine.instance.objects;
             let foundItemsHTML = '';
             let foundAny = false;
+            let newFoundObjects = [];
 
             document.querySelectorAll('[id^="overlay-border-"]').forEach(overlay => {
                 const key = overlay.id.replace('overlay-border-', '');
@@ -293,13 +394,15 @@
                         posY = obj.y;
                     }
 
+                    newFoundObjects.push({ key, name, x: posX, y: posY });
+
                     foundItemsHTML += `
                         <div style="background: #1e1e1e; border-left: 3px solid #00ff00; padding: 4px; margin-bottom: 4px; border-radius: 2px;">
                             <div style="color: #00ff00; font-weight: bold; font-size: 10px;">${name}</div>
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 2px;">
                                 <span style="font-size: 9px;">X:${posX} Y:${posY}</span>
                                 <div style="display: flex; gap: 3px;">
-                                    <button class="mfo-walk-btn" data-x="${posX}" data-y="${posY}" style="background: #28a745; color: white; border: none; padding: 1px 4px; border-radius: 2px; cursor: pointer; font-size: 9px; font-weight: bold;">Podejdź</button>
+                                    <button class="mfo-walk-btn" data-key="${key}" data-x="${posX}" data-y="${posY}" style="background: #28a745; color: white; border: none; padding: 1px 4px; border-radius: 2px; cursor: pointer; font-size: 9px; font-weight: bold;">Podejdź</button>
                                     <button class="mfo-ban-btn" data-key="${key}" style="background: #dc3545; color: white; border: none; padding: 1px 4px; border-radius: 2px; cursor: pointer; font-size: 9px;" title="Ukryj ten konkretny egzemplarz">Ukryj</button>
                                 </div>
                             </div>
@@ -339,6 +442,15 @@
                 }
             }
 
+            currentFoundObjects = newFoundObjects;
+
+            // Jeśli stary cel zniknął z mapy, zresetuj wskaźnik celu
+            if (lastTargetKey && !currentFoundObjects.some(o => o.key === lastTargetKey)) {
+                lastTargetKey = null;
+                stuckAttempts = 0;
+                currentAutoIndex = 0;
+            }
+
             const contentDiv = document.getElementById('egg-tracker-content');
             if (contentDiv) {
                 if (foundAny) {
@@ -347,9 +459,17 @@
 
                     document.querySelectorAll('.mfo-walk-btn').forEach(btn => {
                         btn.addEventListener('click', (e) => {
+                            const key = e.target.getAttribute('data-key');
                             const x = parseInt(e.target.getAttribute('data-x'), 10);
                             const y = parseInt(e.target.getAttribute('data-y'), 10);
                             if (!isNaN(x) && !isNaN(y)) {
+                                // Ustaw wskaźnik na ten konkretny obiekt
+                                const foundIdx = currentFoundObjects.findIndex(o => o.key === key);
+                                if (foundIdx !== -1) {
+                                    currentAutoIndex = foundIdx;
+                                    lastTargetKey = key;
+                                    stuckAttempts = 0;
+                                }
                                 walkToCoords(x, y);
                             } else {
                                 console.warn('[MFO3] Błędne współrzędne obiektu.');
